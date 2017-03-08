@@ -1,0 +1,50 @@
+name:                sillysally
+version:             0.1.0.0
+-- synopsis:
+-- description:
+homepage:            https://github.com/dunnl/sillysally#readme
+license:             BSD3
+license-file:        LICENSE
+author:              Lawrence Dunn
+maintainer:          lawrence.dunn@hushmail.com
+copyright:           Copyright: (c) 2016 Lawrence Dunn
+category:            General
+build-type:          Simple
+extra-source-files:  README.md
+cabal-version:       >=1.10
+
+library
+  hs-source-dirs:      src
+  exposed-modules:     Lib
+  build-depends:       base >= 4.7 && < 5
+                     , text
+                     , sqlite-simple
+                     , time
+                     , Spock
+                     , wai-middleware-static
+                     , Spock-digestive
+                     , blaze-html
+                     , digestive-functors
+                     , digestive-functors-blaze
+  default-language:    Haskell2010
+
+executable sillysally-exe
+  hs-source-dirs:      app
+  main-is:             Main.hs
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+  build-depends:       base
+                     , sillysally
+  default-language:    Haskell2010
+
+test-suite sillysally-test
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      test
+  main-is:             Spec.hs
+  build-depends:       base
+                     , sillysally
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+  default-language:    Haskell2010
+
+source-repository head
+  type:     git
+  location: https://github.com/dunnl/sillysally

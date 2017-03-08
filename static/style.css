@@ -1,0 +1,78 @@
+.wrapped-body {
+    padding: 51px 15px;
+    }
+
+.patronPic {
+    max-width: 200px;
+}
+
+.patronRow {
+    padding: 10px 0 0 10px;
+}
+.patronDetails {
+    padding-top: 10px;
+}
+
+.renderGuess {
+    padding : 15px;
+    margin: 10px auto;
+    text-align: center;
+    max-width: 800px;
+}
+.guessTitle {
+    padding : 15px;
+    margin: 10px auto;
+    text-align: center;
+    max-width: 400px;
+}
+
+.time {
+    color: #333;
+    font-size: 80%;
+}
+
+.false {
+    color: #f00;
+    font-weight: bold;
+    font-size: 120%
+}
+
+.big {
+    font-weight: bold;
+    font-size: 120%
+}
+
+.true {
+    color: #0f0;
+    font-weight: bold;
+    font-size: 120%
+}
+form {
+    padding: 15px;
+    margin:10px auto;
+    margin-top: 100px;
+    max-width: 400px;
+}
+
+form .submit {
+    float: right;
+}
+
+form .input {
+    margin-left: 150px;
+}
+
+form .line {
+    margin-bottom: 18px;
+}
+
+label {
+    color: #404040;
+    float: left;
+    font-size: 13px;
+    line-height: 18px;
+    padding-top: 6px;
+    margin-right: 20px;
+    text-align: right;
+    width: 130px;
+}
