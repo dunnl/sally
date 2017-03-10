@@ -41,6 +41,7 @@ packages:
 # (e.g., acme-missiles-0.3)
 extra-deps: [digestive-functors-0.8.2.0, digestive-functors-blaze-0.6.1.0, Spock-digestive-0.3.0.0]
 
+
 # Override default flag values for local packages and extra-deps
 flags: {}
 
@@ -64,3 +65,5 @@ extra-package-dbs: []
 #
 # Allow a newer minor version of GHC than the snapshot specifies
 # compiler-check: newer-minor
+docker:
+    enable: true

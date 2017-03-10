@@ -3,6 +3,13 @@
 
 module Lib where
 
+import Network.Wai
+import Network.Wai.Handler.Warp
+import Network.HTTP.Types.Status
+import Network.HTTP.Types.Header
+import qualified Data.ByteString as BS
+import Network.Wai.Handler.Warp
+--
 import Web.Spock hiding (text)
 import Web.Spock.Config
 import Web.Spock.Digestive
@@ -13,6 +20,7 @@ import Data.Char (isSpace)
 import Data.Text (Text)
 import Data.Monoid ((<>))
 import qualified Data.Text as T
+--
 
 import Network.Wai.Middleware.Static
 
@@ -89,9 +97,15 @@ blaze html = do
     setHeader "Content-Type" "text/html; charset=utf-8"
     lazyBytes. renderHtml $ html
 
+sallyApp:: Application
+sallyApp _req fresp = fresp $
+    responseBuilder status200 [(hContentType, "text/html; charset=utf-8")] "Hello, warp!"
+
+mainApp = run 8080 sallyApp
+
 mainLib :: IO ()
 mainLib = do
-    withConnection "sally" initTable
+    withConnection "/db/sally" initTable
     spockCfg <- defaultSpockCfg () (PCNoDatabase)  ()
     runSpock 80 $ do
         site <- (spock spockCfg app)
@@ -110,7 +124,7 @@ app :: SpockM () () () ()
 app = do
     get root $ do
         (v, _)<- runForm "guess" sallyForm
-        gs <- liftIO $ withConnection "sally" (selectGuesses 10)
+        gs <- liftIO $ withConnection "/db/sally" (selectGuesses 10)
         blaze $ do
             H.head $ do
                 H.title "Silly Sally"
@@ -125,7 +139,7 @@ app = do
         case m of
             Nothing -> error "How?"
             Just g -> do
-                liftIO $ withConnection "sally" (insertGuess g)
+                liftIO $ withConnection "/db/sally" (insertGuess g)
                 redirect "/"
 
 sallyForm :: (Monad m) => Form Html m Guess
