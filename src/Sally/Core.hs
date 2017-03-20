@@ -1,15 +1,8 @@
 {-# language OverloadedStrings #-}
 {-# language TypeOperators #-}
 
-module Lib where
+module Sally.Core where
 
-import Network.Wai
-import Network.Wai.Handler.Warp
-import Network.HTTP.Types.Status
-import Network.HTTP.Types.Header
-import qualified Data.ByteString as BS
-import Network.Wai.Handler.Warp
---
 import Web.Spock hiding (text)
 import Web.Spock.Config
 import Web.Spock.Digestive
@@ -58,7 +51,11 @@ verifyGuess (Guess likes butnot) =
 
 initTable :: Connection -> IO ()
 initTable conn = 
-    execute_ conn "CREATE TABLE IF NOT EXISTS guesses (likes text, butnot text, valid boolean, time datetime default (datetime('now','localtime')))"
+    execute_ conn
+        "CREATE TABLE IF NOT EXISTS \
+        \ guesses (likes text, butnot text, \
+        \ valid boolean, time datetime default \
+        \ (datetime('now','localtime')))"
 
 dropTable :: Connection -> IO ()
 dropTable conn = 
@@ -97,11 +94,13 @@ blaze html = do
     setHeader "Content-Type" "text/html; charset=utf-8"
     lazyBytes. renderHtml $ html
 
+{-
 sallyApp:: Application
 sallyApp _req fresp = fresp $
     responseBuilder status200 [(hContentType, "text/html; charset=utf-8")] "Hello, warp!"
-
 mainApp = run 8080 sallyApp
+-}
+
 
 mainLib :: IO ()
 mainLib = do
@@ -119,6 +118,7 @@ bootstrap = do
         ! type_ "text/css"
         ! href "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
     H.link ! rel "stylesheet" ! type_ "text/css" ! href "/static/style.css"
+    H.script ! src "/static/app.js" $ ""
 
 app :: SpockM () () () ()
 app = do
