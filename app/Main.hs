@@ -1,6 +1,6 @@
 module Main where
 
-import Sally.Core
+import Sally.Web
 
 main :: IO ()
 main = mainLib

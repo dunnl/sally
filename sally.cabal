@@ -16,15 +16,24 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Sally.Core
+                     , Sally.Web
+                     , Sally.SpockUtil
+                     , Sally.WebSockets
+                     , Sally.Pages
   build-depends:       base >= 4.7 && < 5
                      , text
+                     , websockets
+                     , resource-pool
+                     , vault
                      , bytestring
                      , http-types
                      , wai
+                     , wai-websockets
                      , warp
                      , sqlite-simple
                      , time
                      , Spock
+                     , Spock-core
                      , wai-middleware-static
                      , Spock-digestive
                      , blaze-html
