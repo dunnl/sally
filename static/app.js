@@ -1,13 +1,16 @@
 var likesInput;
 var butnotInput;
 var wlu;
+var glu;
 var username;
+var cmdExp = /\w*/
 
 var setup = function() {
 
     likesInput = document.getElementById('guess.likes')
     butnotInput = document.getElementById('guess.butnot');
     wlu = document.getElementById("websocket-ul");
+    glu = document.getElementById("guess-ul");
     username = document.getElementById("username.input");
 
     var socket = new WebSocket('ws://localhost:8080');
@@ -21,24 +24,40 @@ var setup = function() {
         appendTextLi(wlu, "socket.onclose(): Called");
         }
     socket.onmessage = function (e) {
-        appendTextLi(wlu, "socket.onmessage(): " + e.data);
+        switch(cmdExp.exec(e.data)[0]) {
+            case "Guess":
+                console.log(e.data)
+                console.log("Received a guess");
+                payload = e.data.split("::")[1];
+                console.log(payload);
+                appendGuess(JSON.parse(payload));
+                msg = JSON.stringify(JSON.parse(payload));
+                break;
+            case "Echo":
+                console.log("Received an echo");
+                msg = e.data;
+                break;
+            default:
+                console.log("Received something else: " + e.data);
+            }
+        appendTextLi(wlu, "socket.onmessage(): " + msg);
         }
     document.getElementById('guess.form').addEventListener('submit', intercept(socket));
     document.getElementById('chat.form').addEventListener('submit', chat(socket));
     }
 
 sendGuess = function(socket, likes, butnot, un) {
-    socket.send("Guess:"+un+","+likes+","+butnot);
+    socket.send("Guess::"+un+","+likes+","+butnot);
 }
 
 sendEcho = function(socket, toEcho) {
-    socket.send("Echo:"+toEcho);
+    socket.send("Echo::"+toEcho);
 }
 sendName = function(socket, newName) {
-    socket.send("Name:"+toEcho);
+    socket.send("Name::"+toEcho);
 }
 sendBroadcast = function(socket, un, msg) {
-    socket.send("Broadcast:"+un+","+msg);
+    socket.send("Broadcast::"+un+","+msg);
 }
 
 appendTextLi = function(ul, txt) {
@@ -69,6 +88,10 @@ intercept = function(socket) {
         var butnot = cutInput(butnotInput);
         sendGuess(socket, un, likes, butnot);
     }
+}
+
+appendGuess = function(guess) {
+    appendTextLi(glu, "Guessed: " + guess.likes + " but not " + guess.butnot);
 }
 
 window.onload = setup

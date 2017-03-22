@@ -38,10 +38,11 @@ mainPage v gs = do
                 socketsDiv
                 H.div ! A.class_ "col-md-6" $ do
                     H.header "Silly sally"
-                    sallyView v
+                    guessView v
                     H.div ! class_ "guessTitle" $
                         H.h2 "Last 10 guesses"
-                    forM_ gs renderGuess
+                    H.ul ! A.id "guess-ul" $ do
+                        forM_ gs renderGuess
 socketsDiv :: Html 
 socketsDiv = do
     H.div ! A.class_ "col-md-6" $ do
@@ -59,13 +60,14 @@ socketsDiv = do
         H.div ! A.id "websocket-div" $ do
             H.ul ! A.id "websocket-ul" $ ""
 
-sallyForm :: (Monad m) => Form Html m Guess
-sallyForm = Guess
-    <$> "likes" .: D.text Nothing
-    <*> "butnot" .: D.text Nothing
+guessForm :: (Monad m) => Form Html m Guess
+guessForm = Guess
+    <$> "likes"    .: D.text Nothing
+    <*> "butnot"   .: D.text Nothing
+    <*> "username" .: D.optionalText Nothing
 
-sallyView :: View H.Html -> H.Html
-sallyView view = do
+guessView :: View H.Html -> H.Html
+guessView view = do
     DB.form view "/" ! A.id "guess.form" $ do
         H.div ! class_ "line" $ do
             DB.label "likes" view "Silly Sally likes"
@@ -76,8 +78,8 @@ sallyView view = do
         DB.inputSubmit "Submit" ! class_ "submit"
 
 renderGuess :: GuessResult -> H.Html
-renderGuess ((Guess l n) :. (Only b) :. (Only t)) = do
-    H.div ! class_ "renderGuess" $
+renderGuess ((Guess l n u) :. (Only b) :. (Only t)) = do
+    H.li $ H.div ! class_ "renderGuess" $
         p $ do
             "Silly Sally likes "
             <> renderBig l
@@ -86,10 +88,12 @@ renderGuess ((Guess l n) :. (Only b) :. (Only t)) = do
             <> renderBool b
             <> " "
             <> renderTime t
+            <> H.text (maybe "" id u)
 
 renderBig :: Text -> H.Html
 renderBig t =
     H.span ! class_ "big" $ toHtml t
+
 renderBool :: Bool -> H.Html
 renderBool True =
     H.span ! class_ "true" $ "Correct"
