@@ -63,5 +63,5 @@ spockAppWith conf = do
             Just gs -> do
                 liftIO $ trace "here" $ withConnection db (insertGuess gs)
                 st <- getState
-                liftIO $ broadcastGuess gs st
+                --liftIO $ broadcastGuess gs st
                 redirect "/"

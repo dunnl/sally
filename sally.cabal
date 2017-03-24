@@ -22,8 +22,11 @@ library
                      , Sally.Pages
   build-depends:       base >= 4.7 && < 5
                      , text
+                     , aeson >= 1.1
                      , websockets
-                     , aeson
+                     , uuid
+                     , random
+                     , unordered-containers
                      , resource-pool
                      , vault
                      , bytestring

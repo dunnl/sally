@@ -83,3 +83,21 @@ label {
     padding-bottom: 10px;
     border-bottom: 1px solid #ccc;
 }
+
+.client-msg {
+    color: #f22;
+    font-weight: bold;
+    font-size: 110%
+}
+
+.system-msg {
+    color: #22f;
+    font-weight: bold;
+    font-size: 110%
+}
+
+.chat-msg {
+    color: #333;
+    font-weight: bold;
+    font-size: 110%
+}
