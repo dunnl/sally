@@ -47,24 +47,14 @@ socketsDiv :: Html
 socketsDiv = do
     H.div ! A.class_ "col-md-6" $ do
         H.header "Websockets"
-        H.div $ H.form $ do
-            H.label ! A.for "username.input" $ "Username: "
-            H.input ! A.id   "username.input"
-                    ! A.name "username.input"
         H.hr
-        H.div $ H.form ! A.id "chat.form" $ do
-            H.label ! A.for "chat.input" $ "Broadcast: "
-            H.input ! A.id   "chat.input"
-                    ! A.name "chat.input"
-        H.hr
-        H.div ! A.id "websocket-div" $ do
-            H.ul ! A.id "websocket-ul" $ ""
+        H.div ! A.id "message-div" $ do
+            H.ul ! A.id "message.ul" $ ""
 
 guessForm :: (Monad m) => Form Html m Guess
 guessForm = Guess
     <$> "likes"    .: D.text Nothing
     <*> "butnot"   .: D.text Nothing
-    <*> "username" .: D.optionalText Nothing
 
 guessView :: View H.Html -> H.Html
 guessView view = do
@@ -78,7 +68,7 @@ guessView view = do
         DB.inputSubmit "Submit" ! class_ "submit"
 
 renderGuess :: GuessResult -> H.Html
-renderGuess ((Guess l n u) :. (Only b) :. (Only t)) = do
+renderGuess ((Guess l n)  :. (Only b) :. (Only t)) = do
     H.li $ H.div ! class_ "renderGuess" $
         p $ do
             "Silly Sally likes "
@@ -88,7 +78,6 @@ renderGuess ((Guess l n u) :. (Only b) :. (Only t)) = do
             <> renderBool b
             <> " "
             <> renderTime t
-            <> H.text (maybe "" id u)
 
 renderBig :: Text -> H.Html
 renderBig t =

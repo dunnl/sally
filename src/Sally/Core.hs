@@ -23,14 +23,13 @@ defaultConfig = Configuration "db/sally"
 data Guess = Guess
     { likes    :: Text
     , butnot   :: Text
-    , username :: Maybe Text
     } deriving (Show, Eq, Generic)
 
 instance ToRow Guess where
-    toRow (Guess l b u) = toRow (l, b, u)
+    toRow (Guess l b) = toRow (l, b)
 
 instance FromRow Guess where
-    fromRow = Guess <$> field <*> field <*> field
+    fromRow = Guess <$> field <*> field
 
 instance ToJSON Guess where
     -- Filled in by DeriveGeneric
@@ -45,15 +44,14 @@ sallyLikes txt =
     nospaces = T.filter (not. isSpace) txt
 
 verifyGuess :: Guess -> Bool
-verifyGuess (Guess likes butnot _) =
+verifyGuess (Guess likes butnot) =
    (sallyLikes likes) && (not $ sallyLikes butnot)
 
 initTable :: Connection -> IO ()
 initTable conn = 
     execute_ conn
         "CREATE TABLE IF NOT EXISTS \
-        \ guesses (likes text, butnot text, \
-        \ username varchar(100) default null \
+        \ guesses (likes text, butnot text \
         \ , valid boolean \
         \ , time datetime default \
         \ (datetime('now','localtime')) )"
@@ -71,5 +69,5 @@ selectGuesses n conn = query conn
 
 insertGuess :: Guess -> Connection -> IO ()
 insertGuess g conn = execute conn 
-    "INSERT INTO guesses (likes, butnot, username, valid) values ((?),(?),(?),(?))"
+    "INSERT INTO guesses (likes, butnot, valid) values ((?),(?),(?))"
     (g :. (Only $ verifyGuess g))

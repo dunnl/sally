@@ -34,7 +34,6 @@ import Sally.Core
 -- | A websocket client
 data Client = Client {
       uuid :: UUID          -- ^ Clients' UUID
-    , nick :: Maybe Text    -- ^ Nickname
     , conn :: WS.Connection -- ^ Websocket connection
 }
 
@@ -70,18 +69,20 @@ data BroadcastTarget =
     | All
 
 data Message =
-      Chat ChatMsg
-    | Control ControlMsg
+      MsgGuess   GuessMsg
+    | MsgControl ControlMsg
+    deriving (Show, Generic)
 
-data ChatMsg = ChatMsg
-    { chatEcho :: Bool -- ^ Are we echoing to a client their own message?
-    , chatUuid :: UUID -- ^ UUID of the source
-    , chatNick :: Text -- ^ Nick of the source
-    , chatBody :: Text -- ^ Chat body
+instance ToJSON Message where
+instance FromJSON Message where
+
+data GuessMsg = GuessMsg
+    { guessUuid :: UUID
+    , guessBody :: Guess
     } deriving (Show, Generic)
 
-instance ToJSON ChatMsg where
-instance FromJSON ChatMsg where
+instance ToJSON GuessMsg where
+instance FromJSON GuessMsg where
 
 -- | This is somewhat dangerous becuase of the partiality of the field
 -- accessors. We're only doing it here to help automate the Aeson instances
@@ -94,26 +95,29 @@ data ControlMsg =
         leftUUID :: UUID }
     deriving (Show, Generic)
 
+instance ToJSON ControlMsg where
+instance FromJSON ControlMsg where
+
 sendMessage :: BroadcastTarget
             -> ServerState
             -> Message 
             -> IO ()
 sendMessage tgt st msg =
     case msg of
-        Chat chtmsg
-            -> broadchat tgt chtmsg
+       MsgGuess guessmsg
+            -> broadchat tgt msg
   where
-    broadchat tgt chtmsg =
+    broadchat tgt msg =
         case tgt of
             All -> forM_ st $ \client ->
-                       WS.sendTextData (conn client) (J.encode chtmsg)
+                       WS.sendTextData (conn client) (J.encode msg)
 
 wsapp :: MVar ServerState -> WS.ServerApp
 wsapp state pending = do
     conn    <- WS.acceptRequest pending
     clients <- readMVar state
     newuuid <- randomIO 
-    let thisClient = Client newuuid Nothing conn
+    let thisClient = Client newuuid conn
         disconnect = do
             modifyMVar_ state $ \s -> do
                 let s' = rmClient thisClient s
