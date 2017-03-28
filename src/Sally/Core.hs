@@ -19,7 +19,7 @@ data Configuration = Configuration
 
 defaultConfig = Configuration "db/sally"
 
--- | A guess submitted over the app
+-- | A user's guess
 data Guess = Guess
     { likes    :: Text
     , butnot   :: Text
@@ -37,16 +37,21 @@ instance ToJSON Guess where
 instance FromJSON Guess where
     -- Filled in by DeriveGeneric
 
+-- | Sally likes words with two+ letters repeated after
+-- mapping to lower case and removing spaces
 sallyLikes :: Text -> Bool
 sallyLikes txt = 
     any (uncurry (==)) $ T.zip nospaces (T.tail nospaces)
   where
     nospaces = T.filter (not. isSpace) txt
 
+-- | Core game function. Sally likes guesses where she likes the first word but
+-- not the second.
 verifyGuess :: Guess -> Bool
 verifyGuess (Guess likes butnot) =
    (sallyLikes likes) && (not $ sallyLikes butnot)
 
+-- Initialize sole database table
 initTable :: Connection -> IO ()
 initTable conn = 
     execute_ conn
@@ -56,17 +61,23 @@ initTable conn =
         \ , time datetime default \
         \ (datetime('now','localtime')) )"
 
+-- Drop database table
 dropTable :: Connection -> IO ()
 dropTable conn = 
     execute_ conn "DROP table guesses" 
 
+-- | The game result of a user's guess, which records time and validity of the
+-- guess
 type GuessResult = Guess :. Only Bool :. Only UTCTime
 
+-- | Grab a whole number of guesses from the database for displaying
 selectGuesses :: Int -> Connection -> IO [GuessResult]
 selectGuesses n conn = query conn
     "SELECT * FROM guesses order by time desc limit (?)"
     (Only n)
 
+-- | Accept a user's guess, process it, and store the result. Time is recorded
+-- by the database server.
 insertGuess :: Guess -> Connection -> IO ()
 insertGuess g conn = execute conn 
     "INSERT INTO guesses (likes, butnot, valid) values ((?),(?),(?))"

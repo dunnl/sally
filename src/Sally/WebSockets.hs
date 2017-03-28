@@ -1,3 +1,8 @@
+{-| Module: WebSockets
+ -
+ - Core functionality for the websockets-based portion of the online game
+-}
+
 {-# language OverloadedStrings #-}
 {-# language ViewPatterns #-}
 {-# language DeriveGeneric     #-}
@@ -17,8 +22,11 @@ import Control.Exception (finally)
 import Network.Wai (Application, Middleware)
 -- * Serializing data
 import GHC.Generics
-import           Data.Aeson (ToJSON (..), FromJSON (..), (.=))
+import           Data.Aeson (ToJSON (..), FromJSON (..), (.=), (.:))
 import qualified Data.Aeson as J
+-- * Database Ops
+import Database.SQLite.Simple hiding (Connection)
+import qualified Database.SQLite.Simple as SQL
 -- * Managing client connections
 import Data.HashMap.Strict (HashMap)
 import Data.HashMap.Strict as HM
@@ -33,16 +41,19 @@ import Debug.Trace
 import Sally.Core
 
 
--- | A websocket client
+-- | A websocket client. The UUID is randomly assigned to each client to
+-- facilitate session management.
 data Client = Client {
       uuid :: UUID          -- ^ Clients' UUID
     , conn :: WS.Connection -- ^ Websocket connection
 }
 
+-- | Clients are equal on the UUID
 instance Eq Client where
     (==) = (==) `on` uuid
 
--- | Clients of the websocket app
+-- | Clients of the websocket app. This information is used to handle broadcast
+-- messages.
 type ServerState = HashMap UUID Client
 
 emptyState :: ServerState
@@ -60,48 +71,53 @@ addClient client clients =
 rmClient :: Client -> ServerState -> ServerState
 rmClient = HM.delete . uuid
 
+-- | Send all connected users text
 broadText :: Text -> ServerState -> IO ()
 broadText msg clients = do
     forM_ clients $ \(conn -> conn0) ->
         WS.sendTextData conn0 msg
 
+-- | When we send out messages to three types of targets:
+--  * Everybody (e.g. a user's latest guess)
+--  * A specific user (e.g. a welcome message)
+--  * All users except one (e.g. "a new user has joined")
 data BroadcastTarget =
       AllExcept  Client
     | NoneExcept Client
     | All
 
-data Message =
-      MsgGuess   GuessMsg
-    | MsgControl ControlMsg
+-- | A message from server to client
+data SvMessage =
+      SvGuess   GuessResult  -- ^ A new guess
+    | SvControl SvControlMsg -- ^ Other messages
     deriving (Show, Generic)
 
-instance ToJSON Message where
-    toJSON (MsgGuess guessMsg) =
-        J.object [ "message" .= ("guess" :: Text)
+data SvControlMsg = SvControlMsg Text
+    deriving (Show, Generic)
+
+instance ToJSON SvControlMsg where
+instance FromJSON SvControlMsg where
+
+instance ToJSON SvMessage where
+    toJSON (SvGuess guessMsg) =
+        J.object [ "type" .= "guess"
                  , "body" .= guessMsg
                  ]
-    toJSON (MsgControl ctlMsg) =
-        J.object [ "message" .= ("control" :: Text)
+    toJSON (SvControl ctlMsg) =
+        J.object [ "type" .= "control"
                  , "body" .= ctlMsg
                  ]
-instance FromJSON Message where
 
-data GuessMsg = GuessMsg
-    { guessUuid :: UUID
-    , guessBody :: Guess
-    } deriving (Show, Generic)
+instance FromJSON SvMessage where
+    parseJSON ov@(J.Object v) = do
+       flip (J.withObject "message type") ov $ \o -> do
+           msg <- (o .: "message")
+           case msg of
+               "guess" -> MsgGuess <$> (Guess <$> (o .: "body"))
 
-instance ToJSON GuessMsg where
-instance FromJSON GuessMsg where
-
-data ControlMsg = ControlMsg Text
-    deriving (Show, Generic)
-
-instance ToJSON ControlMsg where
-instance FromJSON ControlMsg where
-
+-- | Send a message out to a target group
 sendMessage :: BroadcastTarget
-            -> Message 
+            -> SvMessage
             -> ServerState
             -> IO ()
 sendMessage tgt msg st =
@@ -130,7 +146,7 @@ wsapp state pending = do
         return s'
     -- Start sending/recving messages
     sendMessage (NoneExcept thisClient) 
-        (MsgControl (ControlMsg $ "Welcome, your UUID is " <> toText newuuid))
+        (SvControl (SvControlMsg $ "Welcome, your UUID is " <> toText newuuid))
         =<< readMVar state
     flip finally disconnect $ forever $ do
         msg     <- WS.receiveData conn
@@ -146,6 +162,8 @@ handleMsg st conn msg =
         Nothing -> error ("Failed to handle: " ++ (show msg))
         Just jsonMsg ->
             case jsonMsg of
-                _ -> error "Good message"
+                CliGuess (guess -> do
+                    withConnection "db/sally" (insertGuess guess)
+                    sendMessage All (MsgGuess guess) =<< (readMVar st)
   where
     djsonMsg = (J.decode msg :: Maybe Message)
