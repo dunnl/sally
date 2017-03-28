@@ -6,6 +6,8 @@ module Sally.WebSockets where
 
 import Data.Text (Text)
 import qualified Data.Text as T
+import           Data.ByteString.Lazy (ByteString)
+import qualified Data.ByteString.Lazy as BL
 import Network.WebSockets as WS hiding (Message)
 import Data.Foldable (forM_)
 import Data.Monoid ((<>))
@@ -15,7 +17,7 @@ import Control.Exception (finally)
 import Network.Wai (Application, Middleware)
 -- * Serializing data
 import GHC.Generics
-import           Data.Aeson (ToJSON, FromJSON)
+import           Data.Aeson (ToJSON (..), FromJSON (..), (.=))
 import qualified Data.Aeson as J
 -- * Managing client connections
 import Data.HashMap.Strict (HashMap)
@@ -74,6 +76,14 @@ data Message =
     deriving (Show, Generic)
 
 instance ToJSON Message where
+    toJSON (MsgGuess guessMsg) =
+        J.object [ "message" .= ("guess" :: Text)
+                 , "body" .= guessMsg
+                 ]
+    toJSON (MsgControl ctlMsg) =
+        J.object [ "message" .= ("control" :: Text)
+                 , "body" .= ctlMsg
+                 ]
 instance FromJSON Message where
 
 data GuessMsg = GuessMsg
@@ -84,33 +94,26 @@ data GuessMsg = GuessMsg
 instance ToJSON GuessMsg where
 instance FromJSON GuessMsg where
 
--- | This is somewhat dangerous becuase of the partiality of the field
--- accessors. We're only doing it here to help automate the Aeson instances
-data ControlMsg = 
-      YouJoined {
-          newUUID :: UUID }
-    | Joined {
-        joinedUUID :: UUID }
-    | Left {
-        leftUUID :: UUID }
+data ControlMsg = ControlMsg Text
     deriving (Show, Generic)
 
 instance ToJSON ControlMsg where
 instance FromJSON ControlMsg where
 
 sendMessage :: BroadcastTarget
-            -> ServerState
             -> Message 
+            -> ServerState
             -> IO ()
-sendMessage tgt st msg =
-    case msg of
-       MsgGuess guessmsg
-            -> broadchat tgt msg
-  where
-    broadchat tgt msg =
-        case tgt of
-            All -> forM_ st $ \client ->
-                       WS.sendTextData (conn client) (J.encode msg)
+sendMessage tgt msg st =
+    case tgt of
+        All -> forM_ st $ \client ->
+                   WS.sendTextData (conn client) (J.encode msg)
+        AllExcept ex -> forM_ st $ \client ->
+                    if client == ex
+                        then return ()
+                        else WS.sendTextData (conn client) (J.encode msg)
+        NoneExcept ex ->
+            WS.sendTextData (conn ex) (J.encode msg)
 
 wsapp :: MVar ServerState -> WS.ServerApp
 wsapp state pending = do
@@ -125,6 +128,10 @@ wsapp state pending = do
     modifyMVar_ state $ \s -> do
         let s' = addClient thisClient s
         return s'
+    -- Start sending/recving messages
+    sendMessage (NoneExcept thisClient) 
+        (MsgControl (ControlMsg $ "Welcome, your UUID is " <> toText newuuid))
+        =<< readMVar state
     flip finally disconnect $ forever $ do
         msg     <- WS.receiveData conn
         handleMsg state conn msg
@@ -133,26 +140,12 @@ wsapp state pending = do
 initWSState :: IO (MVar ServerState)
 initWSState = newMVar emptyState
 
-handleMsg :: MVar ServerState -> Connection -> Text -> IO ()
-handleMsg st conn msg = case command of
-    "Broadcast" ->
-        --broadText msg =<< readMVar st
-        error ""
-    "Echo" -> 
-        --sendText conn $ msg 
-        error ""
-    {-
-    "Name" ->  do
-        let reqnm = head payload
-        nicks <- (HM.filter ((Just reqnm ==). nick)) <$> (readMVar st)
-        if HM.null $ nicks
-           then sendText conn $ "Username " <> reqnm <> " accepted"
-           else sendText conn $ "That username is already taken!"
-    "Guess" -> 
-        broadcastGuess (Guess "Poodles" "Dogs" (Just "Lawrence")) st
-    _ ->
-        sendText conn $ "Did not understand:" <> msg
-    -}
+handleMsg :: MVar ServerState -> Connection -> ByteString -> IO ()
+handleMsg st conn msg = 
+    case djsonMsg of
+        Nothing -> error ("Failed to handle: " ++ (show msg))
+        Just jsonMsg ->
+            case jsonMsg of
+                _ -> error "Good message"
   where
-    (command,rest) = T.breakOn "::" msg
-    payload = T.splitOn "," $ T.drop 2 rest
+    djsonMsg = (J.decode msg :: Maybe Message)

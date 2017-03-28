@@ -16,8 +16,11 @@ msgApp = function () {
         var appendTextLi = function(txt) {
             var newli = document.createElement('li');
             newli.appendChild(document.createTextNode(txt));
-            if appendAtTop {
-                prependLi
+            if (appendAtTop) {
+                prependLi;
+            } else {
+                appendLi;
+            }
         }
         var appendHtmlLi = function(html) {
             var newli = document.createElement('li');
@@ -28,10 +31,13 @@ msgApp = function () {
         ul.appendHtmlLi = appendHtmlLi;
     }
 
-    return attachApp;
-}
+    return {
+        "attachToUl" : attachApp
+    }
+}();
 
-myApp = function () {
+guessApp = function () {
+    console.log("Running guessApp");
     var cmdExp = /\w*/;
     var socket = new WebSocket('ws://localhost:8080');
     var guess  = new Object();
@@ -42,8 +48,8 @@ myApp = function () {
     var guessUl   = document.getElementById('guess-ul');
     var messageUl = document.getElementById('message.ul');
 
-    setupMessages(messageUl);
-    setupMessages(guessUl);
+    msgApp.attachToUl(messageUl);
+    msgApp.attachToUl(guessUl);
 
     var appClientMsg = function(txt) {
         messageUl.appendHtmlLi("<span class=\"client-msg\">Client</span>: " + txt);
@@ -57,73 +63,58 @@ myApp = function () {
         guessUl.appendHtmlLi("<span class=\"system-msg\">Server</span>: " + txt);
     }
 
-    sendGuess = function(socket, likes, butnot, un) {
-        socket.send("Guess::"+un+","+likes+","+butnot);
+    sendGuess = function(socket, newGuess) {
+        var newMessage = new Object();
+        newMessage.message = "guess";
+        newMessage.body = newGuess;
+        socket.send(JSON.stringify(newMessage));
     }
 
     // misc functions
     cutInput = function (el) {
+        console.log(el);
         var ret = el.value
             el.value = ""
         return ret;
     }
 
-    intercept = function(socket) {
+    submitGuess = function(socket) {
         return function (e) {
             if (e.preventDefault) e.preventDefault();
-            var un = document.getElementById('username.input').value
-            var likes = cutInput(likesInput);
-            var butnot = cutInput(butnotInput);
-            sendGuess(socket, un, likes, butnot);
-        }
-    }
 
-    appendGuess = function(guess) {
-        appendTextLi(glu, "Guessed: " + guess.likes + " but not " + guess.butnot);
-        return 0;
+            var newGuess = new Object();
+            newGuess.likes  = cutInput(guess.likes);
+            newGuess.butnot = cutInput(guess.butNot);
+
+
+            appClientMsg("Submitting guess");
+            sendGuess(socket,newGuess);
+        }
     }
 
     socket.onopen = function (e) {
         appClientMsg("Socked opened successfully");
-        if (username.value){
-            un = username.value
-            appClientMsg("Attempting to register username " + un);
-            sendName(socket, un);
-        }
     }
     socket.onclose = function (e) {
-        appendTextLi(messageUl, "socket.onclose(): Called");
+        appClientMsg("Closing socket");
     }
     socket.onmessage = function (e) {
         console.log(e.data)
-        command = cmdExp.exec(e.data)[0]
-        payload = e.data.split("::")[1];
-        switch(command) {
-            case "Guess":
+        var obj = JSON.parse(e.data);
+        switch(obj.message) {
+            case "guess":
                 console.log("Received a guess");
-                console.log(payload);
-                appendGuess(JSON.parse(payload));
-                msg = JSON.stringify(JSON.parse(payload));
-                appClientMsg(msg);
                 break;
-            case "Echo":
-                console.log("Received an system message");
-                appSysMsg(payload);
-                break;
-            case "Broadcast":
-                console.log("Received a chat message");
-                un = payload.split(',')[0];
-                umsg = payload.split(',')[1];
-                appChatMsg(un,umsg);
+            case "control":
+                console.log("Received a system message");
+                appSysMsg(obj.body);
                 break;
             default:
-                msg = e.data
-                console.log("Received something else: " + e.data);
-                appendTextLi(wlu, "socket.onmessage(): " + msg);
+               console.log("Received a strange message");
             }
     }
-    document.getElementById('guess.form').addEventListener('submit', intercept(socket));
+    guess.form.addEventListener('submit', submitGuess(socket));
     return 0;
-};
+}
 
-window.onload = myApp;
+window.onload = guessApp;
