@@ -1,6 +1,6 @@
 module Main where
 
-import Sally.Web
+import Sally.SpockApp
 
 main :: IO ()
 main = runAppDef

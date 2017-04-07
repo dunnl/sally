@@ -1,14 +1,16 @@
 msgApp = function () {
 
     var prependLi = function(ul, li, nlis) {
+        console.log("Prepend called");
         ul.insertBefore(li, ul.childNodes[0]);
-        if (length(ul.childNodes) > nlis) {
+        if (ul.childNodes.length > nlis) {
             ul.removeChild(ul.lastChild);
         }
     }
     var appendLi = function(ul, li, nlis) {
+        console.log("Append called");
         ul.appendChild(li);
-        if (length(ul.childNodes) > nlis) {
+        if (ul.childNodes.length > nlis) {
             ul.removeChild(ul.firstChild);
         }
     }
@@ -17,15 +19,19 @@ msgApp = function () {
             var newli = document.createElement('li');
             newli.appendChild(document.createTextNode(txt));
             if (appendAtTop) {
-                prependLi;
+                prependLi(ul, newli, nlis);
             } else {
-                appendLi;
+                appendLi(ul, newli, nlis);
             }
         }
         var appendHtmlLi = function(html) {
             var newli = document.createElement('li');
             newli.innerHTML = html;
-            ul.appendChild(newli);
+            if (appendAtTop) {
+                prependLi(ul, newli, nlis);
+            } else {
+                appendLi(ul, newli, nlis);
+            }
         }
         ul.appendTextLi = appendTextLi;
         ul.appendHtmlLi = appendHtmlLi;
@@ -43,36 +49,50 @@ guessApp = function () {
     var guess  = new Object();
         guess.form   = document.getElementById('guess.form');
         guess.likes  = document.getElementById('guess.likes')
-        guess.butNot = document.getElementById('guess.butnot');
+        guess.notlikes = document.getElementById('guess.notlikes');
 
     var guessUl   = document.getElementById('guess-ul');
     var messageUl = document.getElementById('message.ul');
 
-    msgApp.attachToUl(messageUl);
-    msgApp.attachToUl(guessUl);
+    msgApp.attachToUl(messageUl, 8, false);
+    msgApp.attachToUl(guessUl, 8, true);
 
     var appClientMsg = function(txt) {
         messageUl.appendHtmlLi("<span class=\"client-msg\">Client</span>: " + txt);
     }
 
     var appSysMsg = function(txt) {
+        console.log("Called");
         messageUl.appendHtmlLi("<span class=\"system-msg\">Server</span>: " + txt);
     }
 
-    var appGuess = function(txt) {
-        guessUl.appendHtmlLi("<span class=\"system-msg\">Server</span>: " + txt);
+    var appGuess = function(gsRes) {
+        var msg = "<div class=\"prettyGuess\">" +
+                "<p>Silly Sally likes " +
+                "<span class=\"big\">" + gsRes.resGs.likes+"</span>, "
+                + "but not " +
+                "<span class=\"big\">" + gsRes.resGs.notlikes+"</span>. ";
+        if (gsRes.resValid) {
+            msg += "<span class=\"true\">Correct</span> ";
+        } else {
+            msg += "<span class=\"false\">Wrong</span> ";
+        }
+        date = new Date();
+        date.setTime(Date.parse(gsRes.resTime));
+        dateStr = moment(date).utc().format("MM/DD/YYYY HH:mm");
+        msg += "<span class=\"time\">" + dateStr + " UST</span>";
+        guessUl.appendHtmlLi(msg);
     }
 
     sendGuess = function(socket, newGuess) {
         var newMessage = new Object();
-        newMessage.message = "guess";
         newMessage.body = newGuess;
+        newMessage.type = "guess";
         socket.send(JSON.stringify(newMessage));
     }
 
     // misc functions
     cutInput = function (el) {
-        console.log(el);
         var ret = el.value
             el.value = ""
         return ret;
@@ -83,10 +103,8 @@ guessApp = function () {
             if (e.preventDefault) e.preventDefault();
 
             var newGuess = new Object();
+            newGuess.notlikes = cutInput(guess.notlikes);
             newGuess.likes  = cutInput(guess.likes);
-            newGuess.butnot = cutInput(guess.butNot);
-
-
             appClientMsg("Submitting guess");
             sendGuess(socket,newGuess);
         }
@@ -101,9 +119,11 @@ guessApp = function () {
     socket.onmessage = function (e) {
         console.log(e.data)
         var obj = JSON.parse(e.data);
-        switch(obj.message) {
+        switch(obj.type) {
             case "guess":
                 console.log("Received a guess");
+                appGuess(obj.body)
+                console.log("Appended guess");
                 break;
             case "control":
                 console.log("Received a system message");

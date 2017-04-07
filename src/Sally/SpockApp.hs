@@ -1,7 +1,7 @@
 {-# language OverloadedStrings #-}
 {-# language TypeOperators #-}
 
-module Sally.Web where
+module Sally.SpockApp where
 
 import Web.Spock hiding (text)
 import Web.Spock.Config
@@ -24,20 +24,20 @@ import Control.Concurrent.MVar
 
 import Database.SQLite.Simple
 
-import Sally.Core
+import Sally.Game
 import Sally.SpockUtil
-import Sally.WebSockets
+import Sally.SocketApp
 import Sally.Pages
 import Debug.Trace
 
 runAppDef :: IO ()
-runAppDef = runAppWith defaultConfig
+runAppDef = runAppWith defAppConf
 
-runAppWith :: Configuration -> IO ()
+runAppWith :: AppConf-> IO ()
 runAppWith conf = do
-    let db = dbstr conf
+    let db = connStr conf
     withConnection db initTable
-    wsSt     <- initWSState
+    wsSt     <- initState
     spockCfg <- defaultSpockCfg () PCNoDatabase  wsSt
     site     <- spockAsApp $ (spock spockCfg (spockAppWith conf))
     let app' = socketize wsSt $ serveStatic site
@@ -49,19 +49,25 @@ runAppWith conf = do
 serveStatic :: Middleware
 serveStatic = staticPolicy $ hasPrefix "static"
 
-spockAppWith :: Configuration -> SpockM () () (MVar ServerState) ()
+spockAppWith :: AppConf -> SpockM () () (MVar ServerState) ()
 spockAppWith conf = do
-    let db = dbstr conf
+    let db = connStr conf
+
     get root $ do
-        (v, _)<- runForm "guess" guessForm
-        gs <- liftIO $ withConnection db (selectGuesses 10)
-        blaze $ mainPage v gs
+        (v, _) <- runForm "guess" guessForm
+        gs     <- liftIO $ withConnection db (nGuessFrom 8)
+        blaze $ mainHtml v gs
+
     post root $ do
-        (v, m) <- runForm "guess" guessForm
+        (_, m) <- runForm "guess" guessForm
         case m of
-            Nothing -> error "How?"
+            Nothing ->
+                -- This shouldn't happen because there is no validation
+                error "guess form failed validation"
             Just gs -> do
-                liftIO $ withConnection db (insertGuess gs)
+                liftIO $ do
+                    res <- gsResOf gs
+                    withConnection db (insertGuess res)
                 st <- getState
                 --liftIO $ broadcastGuess gs st
                 redirect "/"

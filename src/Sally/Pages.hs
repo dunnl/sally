@@ -17,44 +17,50 @@ import Data.Time.Format
 import Data.Text (Text)
 import Data.Foldable (forM_)
 
-import Sally.Core
+import Sally.Game
 
-bootstrap :: Html
-bootstrap = do
-    H.link ! rel "stylesheet" 
-        ! type_ "text/css"
-        ! href "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
-    H.link ! rel "stylesheet" ! type_ "text/css" ! href "/static/style.css"
+includes :: Html
+includes = do
+    H.link   ! rel "stylesheet" 
+             ! type_ "text/css"
+             ! href "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+    H.link   ! rel "stylesheet" ! type_ "text/css" ! href "/static/style.css"
     H.script ! src "/static/app.js" $ ""
+    H.script ! src "https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js" $ ""
 
-mainPage :: View H.Html -> [GuessResult] -> Html
-mainPage v gs = do
+mainHtml :: View H.Html -> [GsRes] -> Html
+mainHtml v gsrs = do
     H.head $ do
         H.title "Silly Sally"
-        bootstrap
+        includes
     H.body $ do
         H.div ! A.class_ "container" $ do
             H.div ! A.class_ "row" $ do
-                socketsDiv
                 H.div ! A.class_ "col-md-6" $ do
-                    H.header "Silly sally"
-                    guessView v
-                    H.div ! class_ "guessTitle" $
-                        H.h2 "Last 10 guesses"
-                    H.ul ! A.id "guess-ul" $ do
-                        forM_ gs renderGuess
+                    socketsDiv
+                H.div ! A.class_ "col-md-6" $ do
+                    gameDiv v gsrs
+
 socketsDiv :: Html 
 socketsDiv = do
-    H.div ! A.class_ "col-md-6" $ do
-        H.header "Websockets"
-        H.hr
-        H.div ! A.id "message-div" $ do
-            H.ul ! A.id "message.ul" $ ""
+    H.header "Websockets"
+    H.hr
+    H.div ! A.id "message-div" $ do
+        H.ul ! A.id "message.ul" $ ""
 
-guessForm :: (Monad m) => Form Html m Guess
-guessForm = Guess
+gameDiv :: View H.Html -> [GsRes] -> Html
+gameDiv v gsrs = do
+    H.header "Silly sally"
+    guessView v
+    H.div ! class_ "guessTitle" $
+        H.h2 "Last 8 guesses"
+    H.ul ! A.id "guess-ul" $ do
+        forM_ gsrs prettyGuess
+
+guessForm :: (Monad m) => Form Html m Gs
+guessForm = Gs
     <$> "likes"    .: D.text Nothing
-    <*> "butnot"   .: D.text Nothing
+    <*> "notlikes" .: D.text Nothing
 
 guessView :: View H.Html -> H.Html
 guessView view = do
@@ -63,33 +69,34 @@ guessView view = do
             DB.label "likes" view "Silly Sally likes"
             H.div ! class_ "input" $ DB.inputText "likes" view
         H.div ! class_ "line" $ do
-            DB.label "butnot" view "But not"
-            H.div ! class_ "input" $ DB.inputText "butnot" view
+            DB.label "notlikes" view "But not"
+            H.div ! class_ "input" $ DB.inputText "notlikes" view
         DB.inputSubmit "Submit" ! class_ "submit"
 
-renderGuess :: GuessResult -> H.Html
-renderGuess ((Guess l n)  :. (Only b) :. (Only t)) = do
-    H.li $ H.div ! class_ "renderGuess" $
+prettyGuess :: GsRes -> H.Html
+prettyGuess (GsRes (Gs l n) b t) = do
+    H.li $ H.div ! class_ "prettyGuess" $
         p $ do
             "Silly Sally likes "
-            <> renderBig l
+            <> bigText l
             <> ", but not "
-            <> renderBig n  <> ". "
-            <> renderBool b
+            <> bigText n
+            <> ". "
+            <> prettyBool b
             <> " "
-            <> renderTime t
+            <> prettyTime t
 
-renderBig :: Text -> H.Html
-renderBig t =
+bigText :: Text -> H.Html
+bigText t =
     H.span ! class_ "big" $ toHtml t
 
-renderBool :: Bool -> H.Html
-renderBool True =
+prettyBool :: Bool -> H.Html
+prettyBool True =
     H.span ! class_ "true" $ "Correct"
-renderBool False =
+prettyBool False =
     H.span ! class_ "false" $ "Wrong"
 
-renderTime :: UTCTime -> H.Html
-renderTime tm =
+prettyTime :: UTCTime -> H.Html
+prettyTime tm =
     H.span ! class_ "time" $ do
-        toHtml $ formatTime defaultTimeLocale "%D %R EST" tm
+        toHtml $ formatTime defaultTimeLocale "%D %R UST" tm

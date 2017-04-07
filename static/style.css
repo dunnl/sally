@@ -4,7 +4,7 @@ body {
     line-height: 18px;
 }
 
-.renderGuess {
+.prettyGuess {
     padding : 15px;
     margin: 10px auto;
     text-align: center;
@@ -72,6 +72,10 @@ label {
     margin-right: 20px;
     text-align: right;
     width: 130px;
+}
+
+#guess-ul {
+    list-style:none;
 }
 
 #websocket-ul {
