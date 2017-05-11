@@ -45,7 +45,7 @@ msgApp = function () {
 guessApp = function () {
     console.log("Running guessApp");
     var cmdExp = /\w*/;
-    var socket = new WebSocket('ws://localhost:8080');
+    var socket = new WebSocket('ws://');
     var guess  = new Object();
         guess.form   = document.getElementById('guess.form');
         guess.likes  = document.getElementById('guess.likes')

@@ -11,12 +11,7 @@ import Database.SQLite.Simple
 import Data.Time.Clock (UTCTime, getCurrentTime)
 import Data.Aeson
 import GHC.Generics
-
-data AppConf = AppConfig
-    { connStr :: String -- ^ Sqlite3 connection string
-    } deriving (Show, Eq)
-
-defAppConf = AppConfig "db/sally"
+import System.Environment
 
 -- | A user's guess
 data Gs = Gs

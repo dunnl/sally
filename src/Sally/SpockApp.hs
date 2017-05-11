@@ -25,33 +25,41 @@ import Control.Concurrent.MVar
 import Database.SQLite.Simple
 
 import Sally.Game
+import Sally.Config
 import Sally.SpockUtil
 import Sally.SocketApp
 import Sally.Pages
 import Debug.Trace
 
-runAppDef :: IO ()
-runAppDef = runAppWith defAppConf
+runAppDispatch :: IO ()
+runAppDispatch = 
+    do cmd <- execParser $ commandParserInfo
+       print cmd
 
-runAppWith :: AppConf-> IO ()
-runAppWith conf = do
-    let db = connStr conf
-    withConnection db initTable
-    wsSt     <- initState
-    spockCfg <- defaultSpockCfg () PCNoDatabase  wsSt
-    site     <- spockAsApp $ (spock spockCfg (spockAppWith conf))
-    let app' = socketize wsSt $ serveStatic site
-    run 8080 $ app'
+runWith :: AppConfig -> IO ()
+runWith conf = do
+    let db = dbConnStr conf
+
+    wsSt      <- initWebsockets
+    spockCfg  <- defaultSpockCfg () PCNoDatabase  wsSt
+    spockApp  <- spockAsApp $ (spock spockCfg (spockAppWith conf))
+
+    let spockApp' = fmap withStatic spockApp
+    app       <- if   useWebsockets conf
+                 then withSockets spockApp'
+                 else spockApp'
+    run (port conf) $ app
   where
-    socketize st app =
-        websocketsOr WC.defaultConnectionOptions (wsapp st) app
+    withSockets app = do
+        wsSt      <- initWebsockets
+        websocketsOr WC.defaultConnectionOptions (wsapp conf st) app
 
-serveStatic :: Middleware
-serveStatic = staticPolicy $ hasPrefix "static"
+withStatic :: Middleware
+withStatic = staticPolicy $ hasPrefix "static"
 
-spockAppWith :: AppConf -> SpockM () () (MVar ServerState) ()
+spockAppWith :: AppConfig -> SpockM () () (MVar ServerState) ()
 spockAppWith conf = do
-    let db = connStr conf
+    let db = dbConnStr conf
 
     get root $ do
         (v, _) <- runForm "guess" guessForm

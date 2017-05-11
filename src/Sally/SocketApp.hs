@@ -42,6 +42,7 @@ import Data.Function(on)
 import Debug.Trace
 
 import Sally.Game
+import Sally.Config
 
 
 -- | A websocket client. 
@@ -61,8 +62,8 @@ type ServerState = HashMap UUID Client
 emptyState :: ServerState
 emptyState = HM.empty
 
-initState :: IO (MVar ServerState)
-initState = newMVar emptyState
+initWebsockets :: IO (MVar ServerState)
+initWebsockets = newMVar emptyState
 
 numClients :: ServerState -> Int
 numClients = HM.size
@@ -140,8 +141,8 @@ broadcastNumClients st =
         (SvCtrl (SvCtrlMsg $ "Active (socket-based) clients: " <> (T.pack. show $ numClients st)))
         st
         
-wsapp :: MVar ServerState -> WS.ServerApp
-wsapp state pending = do
+wsapp :: AppConfig -> MVar ServerState -> WS.ServerApp
+wsapp conf state pending = do
     conn    <- WS.acceptRequest pending
     clients <- readMVar state
     newuuid <- randomIO 
@@ -168,20 +169,21 @@ wsapp state pending = do
     broadcastNumClients =<< readMVar state
     flip finally disconnect $ forever $ do
         msg     <- WS.receiveData conn
-        handleClientMsg state conn msg
+        handleClientMsg conf state conn msg
     return ()
 
-handleClientMsg :: MVar ServerState
+handleClientMsg :: AppConfig
+                -> MVar ServerState
                 -> Connection
                 -> ByteString
                 -> IO ()
-handleClientMsg st conn encmsg = 
+handleClientMsg conf st conn encmsg = 
     case msg of
         Nothing ->
             error ("Failed to handle: " ++ (show encmsg))
         Just (ClGs guess) -> do
             res <- gsResOf guess
-            withConnection "db/sally" (insertGuess res)
+            withConnection (dbConnStr conf) (insertGuess res)
             sendMessage All (SvGs res) =<< (readMVar st)
   where
     msg = (J.decode encmsg :: Maybe ClMessage)
