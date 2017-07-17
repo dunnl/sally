@@ -9,41 +9,32 @@
 
 module Sally.SocketApp where
 
-import Data.Text (Text)
-import qualified Data.Text as T
-import           Data.ByteString.Lazy (ByteString)
-import qualified Data.ByteString.Lazy as BL
-import Network.WebSockets as WS hiding (Message)
-import Data.Foldable (forM_)
-import Data.Monoid ((<>))
 import Control.Monad (forever)
 import Control.Concurrent.MVar
 import Control.Exception (finally)
-import Network.Wai (Application, Middleware)
--- * Serializing data
-import GHC.Generics
-import           Data.Aeson ( ToJSON (..)
-                            , FromJSON (..)
-                            , (.=)
-                            , (.:))
+import Data.Aeson (ToJSON (..), FromJSON (..), (.=), (.:))
 import qualified Data.Aeson as J
--- * Database Ops
-import Database.SQLite.Simple hiding (Connection)
-import qualified Database.SQLite.Simple as SQL
 import Data.Aeson.Types as J (Parser)-- And UUID instances (requires aeson >= 1.1)
--- * Managing client connections
+import Data.ByteString.Lazy (ByteString)
+import qualified Data.ByteString.Lazy as BL
+import Data.Foldable (forM_)
 import Data.HashMap.Strict (HashMap)
 import Data.HashMap.Strict as HM
--- * Generating client IDs
-import System.Random
+import Data.Monoid ((<>))
+import Data.Text (Text)
 import Data.UUID
-import Data.Function(on)
---
-import Debug.Trace
+import Data.Function (on)
+import qualified Data.Text as T
+import Database.SQLite.Simple hiding (Connection)
+import GHC.Generics
+import Network.WebSockets as WS hiding (Message)
+import Network.WebSockets.Connection as WC
+import Network.Wai.Handler.WebSockets (websocketsOr)
+import Network.Wai (Application)
+import System.Random
 
 import Sally.Game
 import Sally.Config
-
 
 -- | A websocket client. 
 data Client = Client {
@@ -52,7 +43,7 @@ data Client = Client {
 }
 
 instance Show Client where
-    show (Client uuid _) = show uuid
+    show (Client uuid _) = "Client " ++ show uuid
 
 instance Eq Client where
     (==) = (==) `on` uuid
@@ -62,8 +53,8 @@ type ServerState = HashMap UUID Client
 emptyState :: ServerState
 emptyState = HM.empty
 
-initWebsockets :: IO (MVar ServerState)
-initWebsockets = newMVar emptyState
+newServerState :: IO (MVar ServerState)
+newServerState = newMVar emptyState
 
 numClients :: ServerState -> Int
 numClients = HM.size
@@ -117,21 +108,20 @@ instance FromJSON ClMessage where
            case msg of
                "guess" -> ClGs <$> (o .: "body")
 
--- | Send a message out to a target group. We don't generalize SvMessage to
--- (ToJSON a)=>a to ensure message type-safety for the client
 sendMessage :: BroadcastTarget
             -> SvMessage
             -> ServerState
             -> IO ()
 sendMessage tgt msg st =
     case tgt of
-        All -> forM_ st $ \client -> do
-                    trace  ("Sending message to " ++ show client)
-                     WS.sendTextData (conn client) (J.encode msg)
-        AllExcept ex -> forM_ st $ \client ->
-                    if client == ex
-                        then return ()
-                        else WS.sendTextData (conn client) (J.encode msg)
+        All ->
+            forM_ st $ \client -> do
+                WS.sendTextData (conn client) (J.encode msg)
+        AllExcept ex -> 
+            forM_ st $ \client ->
+                if client == ex
+                    then return ()
+                    else WS.sendTextData (conn client) (J.encode msg)
         NoneExcept ex ->
             WS.sendTextData (conn ex) (J.encode msg)
 
@@ -140,37 +130,45 @@ broadcastNumClients st =
     sendMessage All
         (SvCtrl (SvCtrlMsg $ "Active (socket-based) clients: " <> (T.pack. show $ numClients st)))
         st
+
+addClientTo :: Client -> MVar ServerState -> IO ()
+addClientTo cl mst = do
+    modifyMVar_ mst $ \st -> do
+        return $ addClient cl st
         
-wsapp :: AppConfig -> MVar ServerState -> WS.ServerApp
-wsapp conf state pending = do
+clientLeaves :: Client -> MVar ServerState -> IO ()
+clientLeaves cl@(Client uuid _) mst = do
+    modifyMVar_ mst $ \st -> do
+        sendMessage (AllExcept cl) byeMsg st
+        broadcastNumClients st
+        return $ rmClient cl st
+  where
+    byeMsg = 
+        SvCtrl $ SvCtrlMsg $ "A client left: " <> toText uuid
+    
+greetClient :: Client -> MVar ServerState -> IO ()
+greetClient cl@(Client uuid _) mst = do
+    withMVar mst $ \st -> do
+        sendMessage (NoneExcept cl) greetMsg st
+        sendMessage (AllExcept cl) annMsg    st
+        broadcastNumClients st
+  where
+    greetMsg = 
+        SvCtrl (SvCtrlMsg $ "Welcome, your UUID is " <> toText uuid)
+    annMsg =
+        SvCtrl (SvCtrlMsg $ "A new client joined with UUID " <> toText uuid)
+
+webSocketsApp :: AppConfig -> MVar ServerState -> WS.ServerApp
+webSocketsApp conf state pending = do
     conn    <- WS.acceptRequest pending
-    clients <- readMVar state
-    newuuid <- randomIO 
+    uuid <- randomIO 
     WS.forkPingThread conn 30
-    let thisClient = Client newuuid conn
-        disconnect = do
-            modifyMVar_ state $ \s -> do
-                let s' = rmClient thisClient s
-                return s'
-            sendMessage (AllExcept thisClient) 
-                (SvCtrl (SvCtrlMsg $ "A client left: " <> toText newuuid))
-                =<< readMVar state
-            broadcastNumClients =<< readMVar state
-    modifyMVar_ state $ \s -> do
-        let s' = addClient thisClient s
-        return s'
-    -- Start sending/recving messages
-    sendMessage (NoneExcept thisClient) 
-        (SvCtrl (SvCtrlMsg $ "Welcome, your UUID is " <> toText newuuid))
-        =<< readMVar state
-    sendMessage (AllExcept thisClient) 
-        (SvCtrl (SvCtrlMsg $ "A new client joined with UUID " <> toText newuuid))
-        =<< readMVar state
-    broadcastNumClients =<< readMVar state
-    flip finally disconnect $ forever $ do
+    let thisClient = Client uuid conn
+    addClientTo thisClient state
+    greetClient thisClient state
+    flip finally (clientLeaves thisClient state) $ forever $ do
         msg     <- WS.receiveData conn
         handleClientMsg conf state conn msg
-    return ()
 
 handleClientMsg :: AppConfig
                 -> MVar ServerState
@@ -183,7 +181,13 @@ handleClientMsg conf st conn encmsg =
             error ("Failed to handle: " ++ (show encmsg))
         Just (ClGs guess) -> do
             res <- gsResOf guess
-            withConnection (dbConnStr conf) (insertGuess res)
+            withConnection (sqliteFile conf) (insertGuess res)
             sendMessage All (SvGs res) =<< (readMVar st)
   where
     msg = (J.decode encmsg :: Maybe ClMessage)
+
+
+withSockets :: AppConfig -> Application -> IO Application
+withSockets conf app = do
+    wsSt <- newServerState 
+    return $ websocketsOr WC.defaultConnectionOptions (webSocketsApp conf wsSt) app

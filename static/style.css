@@ -4,12 +4,6 @@ body {
     line-height: 18px;
 }
 
-.prettyGuess {
-    padding : 15px;
-    margin: 10px auto;
-    text-align: center;
-    max-width: 800px;
-}
 .guessTitle {
     padding : 15px;
     margin: 10px auto;
@@ -78,11 +72,19 @@ label {
     list-style:none;
 }
 
-#websocket-ul {
+#guess-ul li {
+    display: block;
+    padding : 15px;
+    margin: 10px auto;
+    text-align: center;
+    max-width: 800px;
+}
+
+#message-ul {
     list-style:none;
 }
 
-#websocket-ul li {
+#message-ul li {
     padding-top: 10px;
     padding-bottom: 10px;
     border-bottom: 1px solid #ccc;
@@ -94,7 +96,7 @@ label {
     font-size: 110%
 }
 
-.system-msg {
+.server-msg {
     color: #22f;
     font-weight: bold;
     font-size: 110%

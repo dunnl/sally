@@ -5,25 +5,22 @@ module Sally.Config (
 
 import Control.Applicative ((<**>))
 import Data.Monoid ((<>))
-import System.Environment
 import Options.Applicative
 
 data AppConfig = AppConfig
-    { useWebsockets :: Bool
-    , dbConnStr     :: String
-    , port          :: Int
-    , logLevel      :: Int
+    { sqliteFile :: String
+    , port       :: Int
+    , logLevel   :: Int
     } deriving (Show, Eq)
 
 defAppConfig :: AppConfig
 defAppConfig = AppConfig
-    { useWebsockets = True
-    , dbConnStr     = "sally.sqlite3"
-    , port          = 80
-    , logLevel      = 9
+    { sqliteFile  = "sally.sqlite3"
+    , port        = 80
+    , logLevel    = 9
     }                
 
-data Command = Initialize | Run AppConfig
+data Command = Initialize String | Run AppConfig
     deriving (Show)
 
 commandParserInfo = info commandParser idm
@@ -31,22 +28,30 @@ commandParserInfo = info commandParser idm
 commandParser :: Parser Command
 commandParser =
     subparser
-        ( (command "run" (Run <$> configParserInfo))
-        <> 
-          (command "initialize" (info (pure Initialize) idm))
-        )
+        (  command "run" (Run <$> configParserInfo)
+        <> command "initialize" (Initialize <$> initParserInfo) )
+
+-- | Parser for "init" command
+initParser :: Parser String
+initParser = 
+    strOption ( long "database"
+              <> metavar "DATAFILE"
+              <> help "Sqlite3 database file to create"
+              )
+initParserInfo :: ParserInfo String
+initParserInfo = 
+    info (initParser <**> helper)
+             (  fullDesc
+             <> progDesc "Create a sqlite3 database to store user submissions"
+             )
 
 configParser :: Parser AppConfig
 configParser = AppConfig
-    <$> switch
-        (  long "no-websockets"
-        <> help "Don't use websockets"
-        )
-    <*> strOption
-        (  long "connection"
-        <> short 'c'
-        <> metavar "CONNSTR"
-        <> help "Sqlite3 connection string" )
+    <$> strOption
+        (  long "database"
+        <> short 'd'
+        <> metavar "DATAFILE"
+        <> help "Sqlite3 database file" )
     <*> option auto
         (  long "port"
         <> short 'p'
@@ -67,6 +72,6 @@ configParserInfo :: ParserInfo AppConfig
 configParserInfo =
     info (configParser <**> helper)
          (  fullDesc
-         <> progDesc "Run a simple web game on PORT with a database CONNSTR"
+         <> progDesc "Run a simple web game on port PORT using the Sqlite3 database DATAFILE"
          <> header "sally -- a simple web game"
          )

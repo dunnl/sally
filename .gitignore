@@ -4,3 +4,4 @@ Spock*/
 db/*
 db/sally
 *.swp
+*.sqlite3

@@ -11,11 +11,10 @@ import Database.SQLite.Simple
 import Data.Time.Clock (UTCTime, getCurrentTime)
 import Data.Aeson
 import GHC.Generics
-import System.Environment
 
 -- | A user's guess
 data Gs = Gs
-    { likes  :: Text
+    { likes    :: Text
     , notlikes :: Text
     } deriving (Show, Eq, Generic)
 
@@ -26,10 +25,7 @@ instance FromRow Gs where
     fromRow = Gs <$> field <*> field
 
 instance ToJSON Gs where
-    -- Filled in by DeriveGeneric
-      
 instance FromJSON Gs where
-    -- Filled in by DeriveGeneric
 
 -- | Sally likes guesses where she likes the first word but
 -- not the second. Sally likes words with @ >= 2@ letters repeated after
@@ -74,7 +70,6 @@ instance FromRow GsRes where
                     <*> field
 
 instance ToJSON GsRes where
-
 instance FromJSON GsRes where
 
 gsResOf :: Gs -> IO (GsRes)

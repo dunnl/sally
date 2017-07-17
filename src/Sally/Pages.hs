@@ -46,11 +46,12 @@ socketsDiv = do
     H.header "Websockets"
     H.hr
     H.div ! A.id "message-div" $ do
-        H.ul ! A.id "message.ul" $ ""
+        H.ul ! A.id "message-ul" $ ""
 
 gameDiv :: View H.Html -> [GsRes] -> Html
 gameDiv v gsrs = do
     H.header "Silly sally"
+    H.hr
     guessView v
     H.div ! class_ "guessTitle" $
         H.h2 "Last 8 guesses"
@@ -64,7 +65,7 @@ guessForm = Gs
 
 guessView :: View H.Html -> H.Html
 guessView view = do
-    DB.form view "/" ! A.id "guess.form" $ do
+    DB.form view "/" ! A.id "guess-form" $ do
         H.div ! class_ "line" $ do
             DB.label "likes" view "Silly Sally likes"
             H.div ! class_ "input" $ DB.inputText "likes" view
@@ -75,8 +76,7 @@ guessView view = do
 
 prettyGuess :: GsRes -> H.Html
 prettyGuess (GsRes (Gs l n) b t) = do
-    H.li $ H.div ! class_ "prettyGuess" $
-        p $ do
+    H.li $ p $ do
             "Silly Sally likes "
             <> bigText l
             <> ", but not "
