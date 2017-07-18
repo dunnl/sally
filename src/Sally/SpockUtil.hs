@@ -1,6 +1,11 @@
+{-|
+   Module: Sally.Pages
+   Description: Spock/Blaze utility function
+   Maintainer: lawrence.dunn.iii@gmail.com
+   License: MIT
+-}
+
 {-# language OverloadedStrings #-}
-{-# language ExplicitForAll #-}
-{-# language GADTs #-}
 
 module Sally.SpockUtil where
 

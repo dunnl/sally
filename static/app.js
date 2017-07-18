@@ -3,7 +3,6 @@ var MessageAppModule = (function() {
 
     var prependLi = function(ul, li, nlis) {
         ul.insertBefore(li, ul.childNodes[0]);
-        console.log("PREPENDING LI");
         if (ul.childNodes.length > nlis) {
             ul.removeChild(ul.lastChild);
         }
@@ -64,26 +63,29 @@ guessApp = function () {
 
     var mkGuess = function(gsRes) {
         var msg = document.createElement("p");
-            msg.innerHtml = "Silly sally likes " 
-              + "<span class=\"big\">" + gsRes.resGs.likes+"</span>, "
-              + "but not "
-              + "<span class=\"big\">" + gsRes.resGs.notlikes+"</span>. ";
-        if (gsRes.resValid) {
-            msg.innerHtml += "<span class=\"true\">Correct</span>";
-        } else {
-            msg.innerHtml += "<span class=\"false\">Wrong</span>";
-        }
+        var meta = document.createElement("p");
+
         date = new Date();
         date.setTime(Date.parse(gsRes.resTime));
         dateStr = moment(date).utc().format("MM/DD/YYYY HH:mm");
-        msg.innerHtml += "<span class=\"time\">" + dateStr + " UST</span>";
-        console.log("Pretty message: " + msg.innerHtml)
-        return msg;
+
+            msg.innerHTML = "Silly sally likes " 
+              + "<span class=\"big\">" + gsRes.resGs.likes+"</span>, "
+              + "but not "
+              + "<span class=\"big\">" + gsRes.resGs.notlikes+"</span>. ";
+
+        if (gsRes.resValid) {
+            msg.innerHTML += "<span class=\"true\">Correct</span>";
+        } else {
+            msg.innerHTML += "<span class=\"false\">Wrong</span>";
+        }
+        meta.innerHTML += "Submitted <span class=\"time\">" + dateStr + " UST</span>";
+        return [msg, meta];
     }
 
     var appGuess = function(gsRes) {
-        var node = mkGuess(gsRes);
-        guessApp.appendLiNodes([node]);
+        var nodes = mkGuess(gsRes);
+        guessApp.appendLiNodes(nodes);
     }
 
     sendGuess = function(socket, newGuess) {

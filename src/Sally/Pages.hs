@@ -1,3 +1,10 @@
+{-|
+   Module: Sally.Pages
+   Description: Blaze Html data
+   Maintainer: lawrence.dunn.iii@gmail.com
+   License: MIT
+-}
+
 {-# language OverloadedStrings #-}
 {-# language TypeOperators #-}
 
@@ -35,22 +42,63 @@ mainHtml v gsrs = do
         includes
     H.body $ do
         H.div ! A.class_ "container" $ do
+            navbar
+            welcome
+            faq
             H.div ! A.class_ "row" $ do
                 H.div ! A.class_ "col-md-6" $ do
                     socketsDiv
                 H.div ! A.class_ "col-md-6" $ do
                     gameDiv v gsrs
 
+welcome :: Html
+welcome = do
+    H.div ! A.class_ "row" $ do
+        H.div ! A.class_ "col-md-8 col-md-offset-2" $ do
+            H.header $
+                H.h1 $ do
+                    "Silly Sally"
+                    H.small ! A.class_ "small-header" $ 
+                        "Provides minutes of entertainment"
+
+faq :: Html
+faq = do
+    H.div ! A.class_ "row" $ do
+        H.section ! A.class_ "col-md-8 col-md-offset-2 qa-header" $ do
+            H.dl ! A.id "qa-list" $ do
+                H.dt $ do
+                    H.span ! A.class_ "qa-lead" $ "Q:"
+                    H.div ! A.class_ "qa-content" $
+                        "What is this?"
+                H.dd $ do
+                    H.span ! A.class_ "qa-lead" $ "A:"
+                    H.div ! A.class_ "qa-content" $ do
+                        "Silly Sally is a game played on road trips and in waiting rooms. \
+                        \ The idea is simple: figure out what Silly Sally likes. \
+                        \ Here's an example to get you started: "
+                        H.span ! A.class_ "example" $
+                            "Silly Sally likes Haskell, but not Python."
+navbar :: Html
+navbar = do
+    H.nav ! A.class_ "navbar" $ do
+        H.div ! A.class_ "container" $ do
+            H.div ! A.class_ "navbar-header" $
+                H.a ! A.href "/" ! A.class_ "navbar-brand" $
+                    "Home"
+            H.ul ! A.class_ "nav navbar-nav navbar-right" $ do
+                H.li $ H.a ! href "about" $ "About"
+                H.li $ H.a ! href "data" $ "Data"
+
 socketsDiv :: Html 
 socketsDiv = do
-    H.header "Websockets"
+    H.header "Program messages"
     H.hr
     H.div ! A.id "message-div" $ do
         H.ul ! A.id "message-ul" $ ""
 
 gameDiv :: View H.Html -> [GsRes] -> Html
 gameDiv v gsrs = do
-    H.header "Silly sally"
+    H.header "Submit a guess"
     H.hr
     guessView v
     H.div ! class_ "guessTitle" $

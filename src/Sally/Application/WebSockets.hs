@@ -1,13 +1,17 @@
-{-| Module: WebSockets
- -
- - Core functionality for the websockets-based portion of the online game
+{-|
+   Module: Sally.Application.WebSockets
+   Description: Websockets component of application
+   Maintainer: lawrence.dunn.iii@gmail.com
+   License: MIT
 -}
 
 {-# language OverloadedStrings #-}
 {-# language ViewPatterns #-}
 {-# language DeriveGeneric     #-}
 
-module Sally.SocketApp where
+module Sally.Application.WebSockets (
+    addSocketsApp
+) where
 
 import Control.Monad (forever)
 import Control.Concurrent.MVar
@@ -186,8 +190,9 @@ handleClientMsg conf st conn encmsg =
   where
     msg = (J.decode encmsg :: Maybe ClMessage)
 
-
-withSockets :: AppConfig -> Application -> IO Application
-withSockets conf app = do
+-- | The main exported function, which accepts global application configuration
+-- data and wraps a WAI.Application with this websocket app
+addSocketsApp :: AppConfig -> Application -> IO Application
+addSocketsApp conf app = do
     wsSt <- newServerState 
     return $ websocketsOr WC.defaultConnectionOptions (webSocketsApp conf wsSt) app

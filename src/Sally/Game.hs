@@ -1,3 +1,10 @@
+{-|
+   Module: Sally.Game
+   Description: Core game logic and some database operations
+   Maintainer: lawrence.dunn.iii@gmail.com
+   License: MIT
+-}
+
 {-# language OverloadedStrings #-}
 {-# language TypeOperators     #-}
 {-# language DeriveGeneric     #-}

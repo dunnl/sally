@@ -1,7 +1,6 @@
 module Main where
 
-import Sally.SpockApp
-import Sally.Config
+import Sally.Application
 
 main :: IO ()
 main = runAppDispatch

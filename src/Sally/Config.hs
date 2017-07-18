@@ -1,3 +1,10 @@
+{-|
+   Module: Sally.Config
+   Description: Application configuration type and parser
+   Maintainer: lawrence.dunn.iii@gmail.com
+   License: MIT
+-}
+
 module Sally.Config (
       Options.Applicative.execParser
     , module Sally.Config

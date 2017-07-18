@@ -15,12 +15,13 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Sally.Game
+  exposed-modules:     Sally.Config
+                     , Sally.Game
                      , Sally.Pages
-                     , Sally.SpockApp
                      , Sally.SpockUtil
-                     , Sally.SocketApp
-                     , Sally.Config
+                     , Sally.Application
+                     , Sally.Application.Spock
+                     , Sally.Application.WebSockets
   build-depends:       base >= 4.7 && < 5
                      , text
                      , aeson >= 1.1

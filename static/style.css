@@ -1,7 +1,43 @@
 body {
+    padding: 50px;
     color: #404040;
-    font-size: 13px;
-    line-height: 18px;
+    font-size: 14px;
+}
+
+.small-header {
+    margin-left: 20px;
+}
+
+.example {
+    font-style: italic;
+}
+
+#qa-list {
+    margin-bottom: 50px;
+}
+
+#qa-list dt {
+    margin-top:20px;
+    margin-bottom:20px;
+}
+
+#qa-list dd {
+    margin-top:20px;
+    margin-bottom:20px;
+}
+
+.qa-lead {
+    display: inline-block;
+    vertical-align:top;
+    width: 10%;
+    font-weight: 900;
+    font-size: 24px;
+}
+
+.qa-content {
+    display: inline-block;
+    width: 90%;
+    font-size: 16px;
 }
 
 .guessTitle {
@@ -34,7 +70,6 @@ body {
 }
 
 .row {
-    margin-top: 100px;
 }
 
 form {

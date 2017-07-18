@@ -1,46 +1,39 @@
-{-# language OverloadedStrings #-}
-{-# language TypeOperators #-}
+{-|
+   Module: Sally.Application.Spock
+   Description: Spock component of application
+   Maintainer: lawrence.dunn.iii@gmail.com
+   License: MIT
+-}
 
-module Sally.SpockApp where
+{-# language OverloadedStrings #-}
+
+module Sally.Application.Spock (
+    makeSpockAppFrom
+) where
 
 import Control.Monad.IO.Class (liftIO)
 import Data.Text ()
+import Database.SQLite.Simple
 import Network.Wai (Application, Middleware)
-import Network.Wai.Handler.Warp (run)
 import Network.Wai.Middleware.Static (staticPolicy, hasPrefix)
 import Web.Spock hiding (text)
 import Web.Spock.Config
 import Web.Spock.Digestive (runForm)
 
-import Database.SQLite.Simple
-
 import Sally.Game
 import Sally.Config
 import Sally.SpockUtil
-import Sally.SocketApp
 import Sally.Pages
-import Debug.Trace
 
-runAppDispatch :: IO ()
-runAppDispatch = 
-    do cmd <- execParser $ commandParserInfo
-       case cmd of
-            Initialize file -> initialize
-            Run cfg         -> runMainWith cfg
+{- We choose not to use Spock's database connection management because it would
+ - have to share it the Websockets app. It is easier to manage it ourselves.
+ -}
 
-initialize :: IO ()
-initialize = print "Not implemented"
-
-withStatic :: Middleware
-withStatic = staticPolicy $ hasPrefix "static"
-
-runMainWith :: AppConfig -> IO ()
-runMainWith conf = do
+-- | Main export
+makeSpockAppFrom :: AppConfig -> IO Application
+makeSpockAppFrom conf = do
     spockCfg  <- defaultSpockCfg () PCNoDatabase  ()
-    baseApp  <- spockAsApp $ (spock spockCfg (spockAppWith conf)) :: IO Application
-    let waiApp = withStatic baseApp
-    fullApp <- withSockets conf waiApp
-    run (port conf) fullApp
+    spockAsApp $ spock spockCfg (spockAppWith conf)
 
 spockAppWith :: AppConfig -> SpockM () () () ()
 spockAppWith (AppConfig db _ _)= do
