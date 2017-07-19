@@ -35,6 +35,38 @@ includes = do
     H.script ! src "/static/app.js" $ ""
     H.script ! src "https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js" $ ""
 
+aboutHtml :: Html
+aboutHtml =  do
+    H.head $ do
+        H.title "Silly Sally"
+        includes
+    H.body $ do
+        H.div ! A.class_ "container" $ do
+            navbar
+            aboutContents
+        
+aboutContents :: Html
+aboutContents = do
+    H.div ! A.class_ "row" $ do
+        H.div ! A.class_ "col-md-8 col-md-offset-2" $ do
+            H.header $
+                H.h1 $ do
+                    "Silly Sally"
+                    H.small ! A.class_ "small-header" $ 
+                        "About"
+            H.section $ do
+                H.p $
+                    "This application was my first excursion into web programming, with or without Haskell, \
+                    \ and my first experience with Javascript. \
+                    \ My aim at the time was to use as much self-written code as possible instead of \
+                    \ relying on higher-abstraction libraries either in Haskell (Yesod, Persistent) \
+                    \ or Javascript (jQuery, React). Nonetheless I wanted to built a moderately complex service \
+                    \ with persistent storage, concurrency, and coordinated bidirectional communication between \
+                    \ the frontend and backend."
+
+                H.p $
+                    "I used these libraries: Spock, Blaze, Websockets, sqlite-simple and (of course) Bootstrap"
+
 mainHtml :: View H.Html -> [GsRes] -> Html
 mainHtml v gsrs = do
     H.head $ do
@@ -87,29 +119,30 @@ navbar = do
                     "Home"
             H.ul ! A.class_ "nav navbar-nav navbar-right" $ do
                 H.li $ H.a ! href "about" $ "About"
-                H.li $ H.a ! href "data" $ "Data"
+--                H.li $ H.a ! href "data" $ "Data"
 
 socketsDiv :: Html 
 socketsDiv = do
     H.header "Program messages"
     H.hr
     H.div ! A.id "message-div" $ do
-        H.ul ! A.id "message-ul" $ ""
+        H.ul ! A.id "message-list" ! A.class_ "message-list" $ ""
 
 gameDiv :: View H.Html -> [GsRes] -> Html
 gameDiv v gsrs = do
     H.header "Submit a guess"
     H.hr
     guessView v
-    H.div ! class_ "guessTitle" $
+    H.header ! class_ "guessTitle" $
         H.h2 "Last 8 guesses"
-    H.ul ! A.id "guess-ul" $ do
+    H.ul ! A.id "game-list" ! A.class_ "game-list" $ do
         forM_ gsrs prettyGuess
 
 guessForm :: (Monad m) => Form Html m Gs
 guessForm = Gs
     <$> "likes"    .: D.text Nothing
     <*> "notlikes" .: D.text Nothing
+    <*> "user"     .: D.text (Just "NoScript User")
 
 guessView :: View H.Html -> H.Html
 guessView view = do
@@ -123,7 +156,7 @@ guessView view = do
         DB.inputSubmit "Submit" ! class_ "submit"
 
 prettyGuess :: GsRes -> H.Html
-prettyGuess (GsRes (Gs l n) b t) = do
+prettyGuess (GsRes (Gs l n u) b t) = do
     H.li $ p $ do
             "Silly Sally likes "
             <> bigText l
@@ -131,7 +164,9 @@ prettyGuess (GsRes (Gs l n) b t) = do
             <> bigText n
             <> ". "
             <> prettyBool b
-            <> " "
+            <> " Submitted by " 
+            <> toHtml u
+            <> " at "
             <> prettyTime t
 
 bigText :: Text -> H.Html

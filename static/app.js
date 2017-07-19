@@ -1,117 +1,99 @@
-var MessageAppModule = (function() {
-    var exports = {};
+// A module for writing items to lists, with optional maximums and direction
+var MsgApp = (function () {
 
-    var prependLi = function(ul, li, nlis) {
-        ul.insertBefore(li, ul.childNodes[0]);
-        if (ul.childNodes.length > nlis) {
-            ul.removeChild(ul.lastChild);
+    const order = {
+          "AppendAtTop"    : 1
+        , "AppendAtBottom" : 2
+    }
+
+    // Internal utility
+    const addLi = function (list, li, maxItems, appendWhere) {
+
+        const addLiTop = function (list, li, maxItems) {
+            list.insertBefore(li, list.childNodes[0]);
+            if (list.childNodes.length > maxItems) {
+                list.removeChild(list.lastChild);
+            }
         }
-    }
-    var appendLi = function(ul, li, nlis) {
-        ul.appendChild(li);
-        if (ul.childNodes.length > nlis) {
-            ul.removeChild(ul.firstChild);
+        const addLiBottom = function (list, li, maxItems) {
+            list.appendChild(li);
+            if (list.childNodes.length > maxItems) {
+                list.removeChild(list.firstChild);
+            }
         }
+
+
+        appendWhere == order["AppendAtTop"] ?
+              addLiTop (list, li, maxItems)
+            : addLiBottom (list, li, maxItems);
     }
-    var MessageApp = function(ul, nlis, appendAtTop) {
-        this.ul = ul;
-        this.nlis = nlis;
-        this.appendAtTop = appendAtTop;
+
+    var App = function (list, maxItems, appendWhere) {
+        this.list = list;
+        this.maxItems = maxItems;
+        this.appendWhere = appendWhere;
     }
-    MessageApp.prototype.appendLiNodes = function(nodes) {
+
+    App.prototype.pushNewLiWith = function (nodes) {
         var newli = document.createElement('li');
         nodes.forEach(function (n) {newli.appendChild(n)});
-        this.appendAtTop ? prependLi(this.ul, newli, this.nlis) : appendLi(this.ul, newli, this.nlis);
+        addLi(this.list, newli, this.maxItems, this.appendWhere);
     }
-    MessageApp.prototype.appendTextLi = function(txt) {
+
+    App.prototype.pushTextLi = function (txt) {
         var node = document.createTextNode(txt)
-        appendLiNode([node]);
+        this.pushNewLiWith([node]);
     }
-    exports.MessageApp = MessageApp;
+
+    App.prototype.clearAll = function (txt) {
+        while(this.list.lastChild) {
+            this.list.removeChild(this.list.lastChild);
+        }
+    }
+
+    const exports = {
+          order
+        , App
+    };
+
     return exports;
+
 })();
 
-guessApp = function () {
-    var cmdExp = /\w*/;
-    var socket = new WebSocket('ws://localhost:8080');
-    var guess  = new Object();
-        guess.form   = document.getElementById('guess-form');
-        guess.likes  = document.getElementById('guess.likes')
-        guess.notlikes = document.getElementById('guess.notlikes');
-    var guessUl   = document.getElementById('guess-ul');
-    var messageUl = document.getElementById('message-ul');
+// An module for submitting and processing SS guesses over a websocket. Requires
+// MsgApp for displaying game state and program messages
+const SallyGame = function (socketUrl, gameElts, messageList, gameList) {
 
-    var msgApp = MessageAppModule;
-    commApp  = new msgApp.MessageApp(messageUl, 8, false);
-    guessApp = new msgApp.MessageApp(guessUl, 8, true);
+    //We will later set uuid to be the UUID assigned to us.
+    this.uuid;
 
-    var appClientMsg = function(txt) {
-        span = document.createElement("span");
-        span.className = "client-msg";
-        span.appendChild(document.createTextNode("Client: "));
-        txtnd = document.createTextNode(txt);
-        commApp.appendLiNodes([span, txtnd]);
-    }
+    this.viewAll = false;
 
-    var appSysMsg = function(txt) {
-        span = document.createElement("span");
-        span.className = "server-msg";
-        span.appendChild(document.createTextNode("Server: "));
-        txtnd = document.createTextNode(txt);
-        commApp.appendLiNodes([span, txtnd]);
-    }
+    //altGame will show all guesses
+    var altGameList = gameList.cloneNode(true);
+    altGameList.id = "alt-game-list";
+    altGameList.style.display = "none";
+    gameList.parentNode.insertBefore(altGameList, gameList);
 
-    var mkGuess = function(gsRes) {
-        var msg = document.createElement("p");
-        var meta = document.createElement("p");
+    //Initialize message app on the two lists
+    const msgApp   = new MsgApp.App(messageList, 10, MsgApp.order["AppendAtBottom"]);
+    const gameApp = new MsgApp.App(gameList, 8, MsgApp.order["AppendAtTop"]);
+    const altGameApp = new MsgApp.App(altGameList, 8, MsgApp.order["AppendAtTop"]);
 
-        date = new Date();
-        date.setTime(Date.parse(gsRes.resTime));
-        dateStr = moment(date).utc().format("MM/DD/YYYY HH:mm");
-
-            msg.innerHTML = "Silly sally likes " 
-              + "<span class=\"big\">" + gsRes.resGs.likes+"</span>, "
-              + "but not "
-              + "<span class=\"big\">" + gsRes.resGs.notlikes+"</span>. ";
-
-        if (gsRes.resValid) {
-            msg.innerHTML += "<span class=\"true\">Correct</span>";
+    const switchViews = function () {
+        if (this.viewAll) {
+            gameList.style.display="none";
+            altGameList.style.display="block";
         } else {
-            msg.innerHTML += "<span class=\"false\">Wrong</span>";
-        }
-        meta.innerHTML += "Submitted <span class=\"time\">" + dateStr + " UST</span>";
-        return [msg, meta];
-    }
-
-    var appGuess = function(gsRes) {
-        var nodes = mkGuess(gsRes);
-        guessApp.appendLiNodes(nodes);
-    }
-
-    sendGuess = function(socket, newGuess) {
-        var newMessage = new Object();
-        newMessage.body = newGuess;
-        newMessage.type = "guess";
-        socket.send(JSON.stringify(newMessage));
-    }
-
-    cutValofNode = function (el) {
-        var ret = el.value;
-        el.value = "";
-        return ret;
-    }
-
-    submitGuess = function(socket) {
-        return function (e) {
-            if (e.preventDefault) e.preventDefault();
-
-            var newGuess = new Object();
-            newGuess.notlikes = cutValofNode(guess.notlikes);
-            newGuess.likes    = cutValofNode(guess.likes);
-            appClientMsg("Submitting guess");
-            sendGuess(socket,newGuess);
+            gameList.style.display="block";
+            altGameList.style.display="none";
         }
     }
+
+    //Clear server-generated list contents in order to process them ourselves
+    gameApp.clearAll();
+
+    const socket = new WebSocket(socketUrl);
 
     socket.onerror = function (e) {
         appClientMsg("Socked experienced an error");
@@ -123,22 +105,112 @@ guessApp = function () {
         appClientMsg("Closing socket");
     }
     socket.onmessage = function (e) {
-        console.log(e.data)
         var obj = JSON.parse(e.data);
         switch(obj.type) {
             case "guess":
-                appGuess(obj.body)
+                displayGuess(obj.body)
                 break;
             case "control":
                 appSysMsg(obj.body);
                 break;
+            case "uuid":
+                this.uuid = obj.body;
+                break;
             default:
-               console.log("Received a strange message:");
-               console.log(JSON.stringify(obb, null, 2));
+               appSysMsg("Received a strange message:" + JSON.stringify(obj, null, 2));
             }
     }
-    guess.form.addEventListener('submit', submitGuess(socket));
-    return 0;
+
+    const appClientMsg = function (txt) {
+        var   span = document.createElement("span");
+              span.className = "client-msg";
+              span.appendChild(document.createTextNode("Client: "));
+        const txtnd = document.createTextNode(txt);
+        msgApp.pushNewLiWith([span, txtnd]);
+    }
+
+    const appSysMsg = function (txt) {
+        var   span = document.createElement("span");
+              span.className = "server-msg";
+              span.appendChild(document.createTextNode("Server: "));
+        const txtnd = document.createTextNode(txt);
+        msgApp.pushNewLiWith([span, txtnd]);
+    }
+
+    const mkGuessNodes = function (gsRes) {
+        var msg = document.createElement("p");
+        var meta = document.createElement("p");
+
+        date = new Date();
+        date.setTime(Date.parse(gsRes.resTime));
+        dateStr = moment(date).utc().format("MM/DD/YYYY HH:mm");
+
+        msg.innerHTML = "Silly sally likes " 
+          + "<span class=\"big\">" + gsRes.resGs.gsLikes+"</span>, "
+          + "but not "
+          + "<span class=\"big\">" + gsRes.resGs.gsNotLikes+"</span>. ";
+
+        if (gsRes.resValid) {
+            msg.innerHTML += "<span class=\"true\">Correct</span>";
+        } else {
+            msg.innerHTML += "<span class=\"false\">Wrong</span>";
+        }
+        meta.innerHTML += "Submitted <span class=\"time\">" + dateStr + " UST</span>";
+        return [msg, meta];
+    }
+
+    const displayGuess = function (gsRes) {
+        const nodes = mkGuessNodes(gsRes);
+        altGameApp.pushNewLiWith(nodes);
+        if (gsRes.resGs.user === this.uuid) {
+            gameApp.pushNewLiWith(nodes);
+        }
+    }
+
+    const sendGuess = function (newGuess) {
+        var newMsg = {};
+        newMsg.body = newGuess;
+        newMsg.type = "guess";
+        socket.send(JSON.stringify(newMsg));
+    }
+
+    const cutValOfNode = function (el) {
+        var ret = el.value;
+        el.value = "";
+        return ret;
+    }
+
+    var submitGuessForm = function (socket) {
+        return function (e) {
+            if (e.preventDefault) e.preventDefault();
+
+            const newGuess = {
+                  clLikes : cutValOfNode(gameElts.likes)
+                , clNotLikes : cutValOfNode(gameElts.notlikes)
+            }
+            appClientMsg("Submitting guess");
+            sendGuess(newGuess);
+        }
+    }
+
+    gameElts.form.addEventListener('submit', submitGuessForm(socket));
+
+    const exports = {};
+    return exports;
 }
 
-window.onload = guessApp;
+window.onload = function () {
+
+    var gameElts = {
+          form     : document.getElementById('guess-form')
+        , likes    : document.getElementById('guess.likes')
+        , notlikes : document.getElementById('guess.notlikes')
+    }
+
+    const messageUl = document.getElementById('message-list');
+    const gameUl = document.getElementById('game-list');
+
+    new SallyGame("ws://localhost:8080", gameElts, messageUl, gameUl);
+
+    return true;
+}

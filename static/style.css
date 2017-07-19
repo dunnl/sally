@@ -103,11 +103,12 @@ label {
     width: 130px;
 }
 
-#guess-ul {
+//Game list (guesses)
+.game-list {
     list-style:none;
 }
 
-#guess-ul li {
+.game-list li {
     display: block;
     padding : 15px;
     margin: 10px auto;
@@ -115,11 +116,12 @@ label {
     max-width: 800px;
 }
 
-#message-ul {
+// Program messages
+.message-list {
     list-style:none;
 }
 
-#message-ul li {
+.message-list li {
     padding-top: 10px;
     padding-bottom: 10px;
     border-bottom: 1px solid #ccc;

@@ -42,6 +42,8 @@ spockAppWith (AppConfig db _ _)= do
         (v, _) <- runForm "guess" guessForm
         gs     <- liftIO $ withConnection db (nGuessFrom 8)
         blaze $ mainHtml v gs
+    get "about" $ do
+        blaze aboutHtml
     -- POST /
     post root $ do
         (_, m) <- runForm "guess" guessForm

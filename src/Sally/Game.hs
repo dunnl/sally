@@ -19,17 +19,21 @@ import Data.Time.Clock (UTCTime, getCurrentTime)
 import Data.Aeson
 import GHC.Generics
 
--- | A user's guess
+import Data.UUID
+
+-- | A user's guess. We choose to store the user submitting the guess as a
+-- simple `Text`
 data Gs = Gs
-    { likes    :: Text
-    , notlikes :: Text
+    { gsLikes    :: Text
+    , gsNotLikes :: Text
+    , gsUser     :: Text
     } deriving (Show, Eq, Generic)
 
 instance ToRow Gs where
-    toRow (Gs lk nlk) = toRow (lk, nlk)
+    toRow (Gs lk nlk us) = toRow (lk, nlk, us)
 
 instance FromRow Gs where
-    fromRow = Gs <$> field <*> field
+    fromRow = Gs <$> field <*> field <*> field
 
 instance ToJSON Gs where
 instance FromJSON Gs where
@@ -38,12 +42,13 @@ instance FromJSON Gs where
 -- not the second. Sally likes words with @ >= 2@ letters repeated after
 -- mapping to lower case and removing spaces
 isValidGs :: Gs -> Bool
-isValidGs (Gs lk nlk) =
+isValidGs (Gs lk nlk _) =
    (likes lk) && (not. likes $ nlk)
   where
     nospc = T.filter (not. isSpace)
     likes :: Text -> Bool
     likes w = 
+        -- | Test if any characters equal their subsequent
         any (uncurry (==)) $ T.zip (nospc w) (T.tail $ nospc w)
 
 initTable :: Connection -> IO ()
@@ -52,6 +57,7 @@ initTable conn =
         " CREATE TABLE IF NOT EXISTS  \
         \ gs  ( likes text            \
         \     , notlikes text         \
+        \     , user     text         \
         \     , isvalid boolean       \
         \     , time datetime default \
         \       (datetime('now','localtime')) )"
@@ -95,5 +101,5 @@ nGuessFrom n conn = query conn
 insertGuess :: GsRes -> Connection -> IO ()
 insertGuess (GsRes gs v tm) conn = do
     execute conn 
-        "INSERT INTO gs (likes, notlikes, isvalid, time) values ((?),(?),(?),(?))"
+        "INSERT INTO gs (likes, notlikes, user, isvalid, time) values ((?),(?),(?),(?),(?))"
         (gs :. Only v :. Only tm)

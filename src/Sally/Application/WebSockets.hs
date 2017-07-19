@@ -46,6 +46,18 @@ data Client = Client {
     , conn :: WS.Connection -- ^ Websocket connection
 }
 
+-- | When a client guesses, we will supply gsUser for them
+data ClientGuess = ClientGuess
+    { clLikes :: Text
+    , clNotLikes :: Text
+    } deriving (Show, Eq, Generic)
+
+clientToGuess :: UUID -> ClientGuess -> Gs
+clientToGuess uuid (ClientGuess lk nlk) =
+    Gs lk nlk (toText uuid)
+
+instance FromJSON ClientGuess
+
 instance Show Client where
     show (Client uuid _) = "Client " ++ show uuid
 
@@ -84,6 +96,7 @@ data BroadcastTarget =
 -- | A message from server to client
 data SvMessage =
       SvGs   GsRes     -- ^ A new guess
+    | SvUuid Text      -- ^ Set user's UUID
     | SvCtrl SvCtrlMsg -- ^ Other messages
     deriving (Show, Generic)
 
@@ -97,20 +110,35 @@ instance ToJSON SvMessage where
         J.object [ "type" .= ("guess" :: Text)
                  , "body" .= gres
                  ]
+    toJSON (SvUuid uuid) =
+        J.object [ "type" .= ("uuid" :: Text)
+                 , "body" .= uuid
+                 ]
     toJSON (SvCtrl ctlMsg) =
         J.object [ "type" .= ("control" :: Text)
                  , "body" .= ctlMsg
                  ]
 
+{-
+-- | A client may choose to subscribe either to their own guesses, or to all
+-- guesses submitted by all users
+data Subscription = SubAll | SubSelf
+    deriving (Show, Eq, Generic)
+instance FromJSON 
+-}
+
 data ClMessage =
-      ClGs Gs
+      ClMsgGs ClientGuess
+    | ClMsgRenew
 
 instance FromJSON ClMessage where
-    parseJSON ov@(J.Object v) = do
-       flip (J.withObject "message type") ov $ \o -> do
-           msg <- (o .: "type") :: J.Parser Text
+    parseJSON = do
+       J.withObject "Client message" $ \obj-> do
+           msg <- (obj .: "type") :: J.Parser Text
            case msg of
-               "guess" -> ClGs <$> (o .: "body")
+               "guess" -> ClMsgGs  <$> (obj .: "body")
+               "renew" -> return ClMsgRenew
+               _ -> fail "Did not understand client message type"
 
 sendMessage :: BroadcastTarget
             -> SvMessage
@@ -154,6 +182,7 @@ greetClient :: Client -> MVar ServerState -> IO ()
 greetClient cl@(Client uuid _) mst = do
     withMVar mst $ \st -> do
         sendMessage (NoneExcept cl) greetMsg st
+        sendMessage (NoneExcept cl) (SvUuid $ toText uuid) st
         sendMessage (AllExcept cl) annMsg    st
         broadcastNumClients st
   where
@@ -172,19 +201,20 @@ webSocketsApp conf state pending = do
     greetClient thisClient state
     flip finally (clientLeaves thisClient state) $ forever $ do
         msg     <- WS.receiveData conn
-        handleClientMsg conf state conn msg
+        handleClientMsg conf state uuid conn msg
 
 handleClientMsg :: AppConfig
                 -> MVar ServerState
+                -> UUID
                 -> Connection
                 -> ByteString
                 -> IO ()
-handleClientMsg conf st conn encmsg = 
+handleClientMsg conf st uuid conn encmsg = 
     case msg of
         Nothing ->
             error ("Failed to handle: " ++ (show encmsg))
-        Just (ClGs guess) -> do
-            res <- gsResOf guess
+        Just (ClMsgGs guess) -> do
+            res <- gsResOf (clientToGuess uuid guess)
             withConnection (sqliteFile conf) (insertGuess res)
             sendMessage All (SvGs res) =<< (readMVar st)
   where
