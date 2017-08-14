@@ -96,15 +96,15 @@ welcome = do
 faq :: Html
 faq = do
     H.div ! A.class_ "row" $ do
-        H.section ! A.class_ "col-md-8 col-md-offset-2 qa-header" $ do
-            H.dl ! A.id "qa-list" $ do
+        H.section ! A.class_ "col-md-8 col-md-offset-2 qa__header" $ do
+            H.dl ! A.id "qa__list" $ do
                 H.dt $ do
-                    H.span ! A.class_ "qa-lead" $ "Q:"
-                    H.div ! A.class_ "qa-content" $
+                    H.span ! A.class_ "qa__lead" $ "Q:"
+                    H.div ! A.class_ "qa__content" $
                         "What is this?"
                 H.dd $ do
-                    H.span ! A.class_ "qa-lead" $ "A:"
-                    H.div ! A.class_ "qa-content" $ do
+                    H.span ! A.class_ "qa__lead" $ "A:"
+                    H.div ! A.class_ "qa__content" $ do
                         "Silly Sally is a game played on road trips and in waiting rooms. \
                         \ The idea is simple: figure out what Silly Sally likes. \
                         \ Here's an example to get you started: "
@@ -125,8 +125,8 @@ socketsDiv :: Html
 socketsDiv = do
     H.header "Program messages"
     H.hr
-    H.div ! A.id "message-div" $ do
-        H.ul ! A.id "message-list" ! A.class_ "message-list" $ ""
+    H.div ! A.id "message__div" $ do
+        H.ul ! A.id "message__list" ! A.class_ "message__list" $ ""
 
 gameDiv :: View H.Html -> [GsRes] -> Html
 gameDiv v gsrs = do
@@ -135,7 +135,7 @@ gameDiv v gsrs = do
     guessView v
     H.header ! class_ "guessTitle" $
         H.h2 "Last 8 guesses"
-    H.ul ! A.id "game-list" ! A.class_ "game-list" $ do
+    H.ul ! A.id "game__list" ! A.class_ "game__list" $ do
         forM_ gsrs prettyGuess
 
 guessForm :: (Monad m) => Form Html m Gs
@@ -146,7 +146,7 @@ guessForm = Gs
 
 guessView :: View H.Html -> H.Html
 guessView view = do
-    DB.form view "/" ! A.id "guess-form" $ do
+    DB.form view "/" ! A.id "guess__form" $ do
         H.div ! class_ "line" $ do
             DB.label "likes" view "Silly Sally likes"
             H.div ! class_ "input" $ DB.inputText "likes" view

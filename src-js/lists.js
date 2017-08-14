@@ -5,7 +5,7 @@ export const order = {
 
 // A module for writing items to lists, with optional maximums and direction
 // Internal utility
-const addLi = function (list, li, maxItems, appendWhere) {
+const addLi = function (list, li, maxItems, msgOrder) {
 
     const addLiTop = function (list, li, maxItems) {
         list.insertBefore(li, list.childNodes[0]);
@@ -20,8 +20,7 @@ const addLi = function (list, li, maxItems, appendWhere) {
         }
     }
 
-
-    appendWhere == order["AppendAtTop"] ?
+    msgOrder == order["AppendAtTop"] ?
           addLiTop (list, li, maxItems)
         : addLiBottom (list, li, maxItems);
 }
@@ -36,7 +35,7 @@ export class App {
     pushNewLiWith(nodes) {
         var newli = document.createElement('li');
         nodes.forEach(function (n) {newli.appendChild(n)});
-        addLi(this.listNode, newli, this.maxItems, this.appendWhere);
+        addLi(this.listNode, newli, this.maxItems, this.msgOrder);
     }
 
     pushTextLi(txt) {
