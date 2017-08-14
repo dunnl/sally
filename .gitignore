@@ -1,5 +1,6 @@
 *DS_Store
 .stack-work/
+node_modules/
 Spock*/
 db/*
 db/sally

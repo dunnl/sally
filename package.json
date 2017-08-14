@@ -1,0 +1,28 @@
+{
+  "name": "sally",
+  "version": "1.0.0",
+  "description": "An frontend app used in the Sally haskell project",
+  "main": "src-js/app.js",
+  "scripts": {
+    "test": "echo 'No test command specified yet'",
+    "build": "babel src-js -d static/",
+    "build2": "browserify src-js/app.js -t [babelify] -o static/app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "none"
+  },
+  "keywords": [
+    "silly",
+    "sally",
+    "websockets"
+  ],
+  "author": "Lawrence Dunn",
+  "license": "MIT",
+  "devDependencies": {
+    "babel-cli": "^6.24.1",
+    "babel-preset-es2015": "^6.24.1",
+    "babelify": "^7.3.0",
+    "browserify": "^14.4.0"
+  }
+}
