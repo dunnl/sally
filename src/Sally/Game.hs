@@ -96,6 +96,12 @@ nGuessFrom n conn = query conn
     "SELECT * FROM gs order by time desc limit (?)"
     (Only n)
 
+-- | Grab a whole number of guesses from the database for displaying
+nGuessFromUser :: Int -> UUID -> Connection -> IO [GsRes]
+nGuessFromUser n uuid conn = query conn
+    "SELECT * FROM gs WHERE user = (?) order by time desc limit (?)"
+    (Only (toText uuid) :. Only n)
+
 -- | Accept a user's guess, process it, and store the result. Time is recorded
 -- by the database server.
 insertGuess :: GsRes -> Connection -> IO ()

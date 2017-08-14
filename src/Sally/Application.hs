@@ -15,6 +15,8 @@ import Sally.Config
 import Sally.Application.WebSockets
 import Sally.Application.Spock
 
+-- | Entry point into the application. We dispatch what to do next based on the
+-- COMMAND pased by the user
 runAppDispatch :: IO ()
 runAppDispatch = 
     do cmd <- execParser $ commandParserInfo
@@ -25,9 +27,11 @@ runAppDispatch =
 initialize :: IO ()
 initialize = print "Not implemented"
 
+-- | Augment a WAI app by serving a static directory
 withStatic :: Middleware
 withStatic = staticPolicy $ hasPrefix "static"
 
+-- | Run the main application server
 runMainWith :: AppConfig -> IO ()
 runMainWith conf = do
     sp <- makeSpockAppFrom conf

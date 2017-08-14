@@ -43,14 +43,12 @@ export default class SallyGame {
         )
     }
 
-    handleGuess = gsRes => {
+    handleGuess = (gsRes, isSelf) => {
         const nodes = mkGuessNodes(gsRes);
         this.gameApp.pushNewLiWith(nodes);
-        /*
-        if (gsRes.resGs.user === this.uuid) {
-            this.gameApp.pushNewLiWith(nodes);
+        if (isSelf) {
+            //this.gameApp.pushNewLiWith(nodes);
         }
-        */
     }
 
 }

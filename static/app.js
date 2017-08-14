@@ -137,14 +137,12 @@ var SallyGame = function SallyGame(socketUrl, gameUl, messageUl, gameElts) {
         _this.msgApp.pushNewLiWith(makeMessage("Server", "server-msg", txt));
     };
 
-    this.handleGuess = function (gsRes) {
+    this.handleGuess = function (gsRes, isSelf) {
         var nodes = mkGuessNodes(gsRes);
         _this.gameApp.pushNewLiWith(nodes);
-        /*
-        if (gsRes.resGs.user === this.uuid) {
-            this.gameApp.pushNewLiWith(nodes);
+        if (isSelf) {
+            //this.gameApp.pushNewLiWith(nodes);
         }
-        */
     };
 
     this.gameApp = new MsgApp.App(gameUl, 8, MsgApp.order["AppendAtTop"]);
@@ -247,12 +245,14 @@ var _class = function () {
                 var obj = JSON.parse(e.data);
                 switch (obj.type) {
                     case "guess":
-                        _this.handleGuess(obj.body);
+                        console.log(obj.body);
+                        _this.handleGuess(obj.body, obj.body.resGs.gsUser === _this.uuid);
                         break;
                     case "control":
                         _this.handleSysMsg(obj.body);
                         break;
                     case "uuid":
+                        console.log("Got UUID");
                         _this.uuid = obj.body;
                         break;
                     default:
@@ -260,6 +260,20 @@ var _class = function () {
                 }
             };
             this.socket = socket;
+        }
+    }, {
+        key: "renew",
+        value: function renew() {
+            var msg = {
+                "type": "renew",
+                "body": "SubSelf"
+            };
+            try {
+                this.socket.send(JSON.stringify(msg));
+            } catch (err) {
+                console.log("rewnew: socket.send failed");
+                console.log(err);
+            }
         }
     }, {
         key: "sendGuess",
@@ -271,7 +285,8 @@ var _class = function () {
             try {
                 this.socket.send(JSON.stringify(newMsg));
             } catch (err) {
-                console.log("sendGuess: socket.send failed");
+                console.log("sendguess: socket.send failed");
+                console.log(err);
             }
         }
     }]);

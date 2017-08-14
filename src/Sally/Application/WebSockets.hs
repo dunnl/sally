@@ -119,25 +119,23 @@ instance ToJSON SvMessage where
                  , "body" .= ctlMsg
                  ]
 
-{-
 -- | A client may choose to subscribe either to their own guesses, or to all
 -- guesses submitted by all users
 data Subscription = SubAll | SubSelf
     deriving (Show, Eq, Generic)
-instance FromJSON 
--}
+instance FromJSON Subscription
 
 data ClMessage =
       ClMsgGs ClientGuess
-    | ClMsgRenew
+    | ClMsgRenew Subscription
 
 instance FromJSON ClMessage where
     parseJSON = do
        J.withObject "Client message" $ \obj-> do
-           msg <- (obj .: "type") :: J.Parser Text
-           case msg of
+           typ <- (obj .: "type") :: J.Parser Text
+           case typ of
                "guess" -> ClMsgGs  <$> (obj .: "body")
-               "renew" -> return ClMsgRenew
+               "renew" -> ClMsgRenew <$> (obj .: "body")
                _ -> fail "Did not understand client message type"
 
 sendMessage :: BroadcastTarget
@@ -201,24 +199,33 @@ webSocketsApp conf state pending = do
     greetClient thisClient state
     flip finally (clientLeaves thisClient state) $ forever $ do
         msg     <- WS.receiveData conn
-        handleClientMsg conf state uuid conn msg
+        handleClientMsg conf state thisClient msg
 
+-- TODO: Remove magic number
 handleClientMsg :: AppConfig
                 -> MVar ServerState
-                -> UUID
-                -> Connection
+                -> Client
                 -> ByteString
                 -> IO ()
-handleClientMsg conf st uuid conn encmsg = 
+handleClientMsg conf st client encmsg = 
     case msg of
         Nothing ->
             error ("Failed to handle: " ++ (show encmsg))
         Just (ClMsgGs guess) -> do
-            res <- gsResOf (clientToGuess uuid guess)
+            res <- gsResOf (clientToGuess thisUuid guess)
             withConnection (sqliteFile conf) (insertGuess res)
             sendMessage All (SvGs res) =<< (readMVar st)
+        Just (ClMsgRenew SubAll) -> do
+            guesses <- withConnection (sqliteFile conf) $ nGuessFrom 8
+            forM_ guesses $ \guess ->
+                sendMessage (NoneExcept client) (SvGs guess) =<< readMVar st
+        Just (ClMsgRenew SubSelf) -> do
+            guesses <- withConnection (sqliteFile conf) $ nGuessFromUser 8 thisUuid
+            forM_ guesses $ \guess ->
+                sendMessage (NoneExcept client) (SvGs guess) =<< readMVar st
   where
     msg = (J.decode encmsg :: Maybe ClMessage)
+    thisUuid = uuid client
 
 -- | The main exported function, which accepts global application configuration
 -- data and wraps a WAI.Application with this websocket app

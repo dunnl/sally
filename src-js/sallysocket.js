@@ -31,12 +31,14 @@ export default class {
             var obj = JSON.parse(e.data);
             switch(obj.type) {
                 case "guess":
-                    this.handleGuess(obj.body)
+                    console.log(obj.body)
+                    this.handleGuess(obj.body, obj.body.resGs.gsUser === this.uuid)
                     break;
                 case "control":
                     this.handleSysMsg(obj.body)
                     break;
                 case "uuid":
+                    console.log("Got UUID")
                     this.uuid = obj.body;
                     break;
                 default:
@@ -44,6 +46,20 @@ export default class {
                 }
         }
         this.socket = socket;
+    }
+
+    renew () {
+        var msg = {
+            "type": "renew",
+            "body": "SubSelf"
+        }
+        try {
+            this.socket.send(JSON.stringify(msg));
+        }
+        catch (err) {
+            console.log("rewnew: socket.send failed");
+            console.log(err);
+        }
     }
 
     sendGuess (newGuess) {
@@ -55,7 +71,8 @@ export default class {
             this.socket.send(JSON.stringify(newMsg));
         }
         catch (err) {
-            console.log("sendGuess: socket.send failed");
+            console.log("sendguess: socket.send failed");
+            console.log(err);
         }
     }
 }
