@@ -8,12 +8,12 @@ window.onload = function () {
         , notlikes : document.getElementById('guess.notlikes')
     }
 
-    console.log(gameElts.form);
 
     const messageUl = document.getElementById('message__list');
     const gameUl = document.getElementById('game__list');
+    const subField = document.getElementById('game__subform');
 
-    var game = new SallyGame("ws://localhost:8080", gameUl, messageUl, gameElts);
+    var game = new SallyGame("ws://localhost:8080", gameUl, messageUl, gameElts, subField);
 
     return true;
 }

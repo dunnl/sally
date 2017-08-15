@@ -15,12 +15,11 @@ window.onload = function () {
         notlikes: document.getElementById('guess.notlikes')
     };
 
-    console.log(gameElts.form);
-
     var messageUl = document.getElementById('message__list');
     var gameUl = document.getElementById('game__list');
+    var subField = document.getElementById('game__subform');
 
-    var game = new _sallygame2.default("ws://localhost:8080", gameUl, messageUl, gameElts);
+    var game = new _sallygame2.default("ws://localhost:8080", gameUl, messageUl, gameElts, subField);
 
     return true;
 };
@@ -124,7 +123,7 @@ var cutValOfNode = function cutValOfNode(el) {
     return ret;
 };
 
-var SallyGame = function SallyGame(socketUrl, gameUl, messageUl, gameElts) {
+var SallyGame = function SallyGame(socketUrl, gameUl, messageUl, gameElts, subscribeForm) {
     var _this = this;
 
     _classCallCheck(this, SallyGame);
@@ -154,6 +153,18 @@ var SallyGame = function SallyGame(socketUrl, gameUl, messageUl, gameElts) {
     this.socket = new _sallysocket2.default(socketUrl, this.handleServerMsg, this.handleClientMsg, this.handleGuess);
 
     this.socket.install();
+
+    this.subscribeForm = subscribeForm;
+
+    subscribeForm.addEventListener('change', function (e) {
+        console.log("The subscription value changed.");
+        console.log("The current value is " + subscribeForm.childNodes.value);
+        console.log(subscribeForm);
+        console.log(subscribeForm.elements);
+        console.log(subscribeForm.elements.value);
+        console.log(subscribeForm.childNodes);
+        console.log(subscribeForm.childNodes.value);
+    });
 
     gameElts.form.addEventListener('submit', function (e) {
         if (e.preventDefault) e.preventDefault();
