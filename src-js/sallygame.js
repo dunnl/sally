@@ -18,16 +18,15 @@ export default class SallyGame {
 
         this.socket.install();
 
+        this.subscription = "SubSelf";
+
         this.subscribeForm = subscribeForm;
 
         subscribeForm.addEventListener('change', e => {
-            console.log("The subscription value changed.")
-            console.log("The current value is " + subscribeForm.childNodes.value);
-            console.log(subscribeForm)
-            console.log(subscribeForm.elements)
-            console.log(subscribeForm.elements.value)
-            console.log(subscribeForm.childNodes)
-            console.log(subscribeForm.childNodes.value)
+            var fieldset = subscribeForm.elements["subscription"]
+            this.subscription = fieldset.value;
+            this.gameApp.clearAll();
+            this.socket.renew(this.subscription);
         });
 
         gameElts.form.addEventListener('submit', e => {

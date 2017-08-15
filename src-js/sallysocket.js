@@ -48,10 +48,10 @@ export default class {
         this.socket = socket;
     }
 
-    renew () {
+    renew (subscription) {
         var msg = {
             "type": "renew",
-            "body": "SubSelf"
+            "body": subscription
         }
         try {
             this.socket.send(JSON.stringify(msg));

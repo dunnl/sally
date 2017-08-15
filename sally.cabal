@@ -29,7 +29,7 @@ library
                      , uuid
                      , random
                      , optparse-applicative
-                     , unordered-containers
+                     , containers
                      , resource-pool
                      , vault
                      , bytestring

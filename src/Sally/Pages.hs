@@ -30,7 +30,7 @@ includes :: Html
 includes = do
     H.link   ! rel "stylesheet" 
              ! type_ "text/css"
-             ! href "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+             ! href "https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css"
     H.link   ! rel "stylesheet" ! type_ "text/css" ! href "/static/style.css"
     H.script ! src "/static/app.js" $ ""
     H.script ! src "https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js" $ ""
@@ -135,13 +135,15 @@ gameDiv v gsrs = do
     H.hr
     guessView v
     H.form ! A.id "game__subform" $ do
-        --H.fieldset ! A.id "game__subfield" $ do
-            --H.div ! A.class_ "radio form-group" $ do
-                H.input ! A.name "subscription" ! A.type_ "radio" ! A.id "game__SubAll" ! A.value "SubAll"
-                H.label ! A.for "game__subAll" $ "Subscribe to all"
-            --H.div ! A.class_ "radio form-group" $ do
-                H.input ! A.name "subscription" ! A.type_ "radio" ! A.id "game__SubSelf" ! A.value "SubSelf"
-                H.label ! A.for "game__subSelf" $ "Subscribe to self"
+        H.fieldset ! A.id "game__subfield" $ do
+            H.div ! A.class_ "form-check" $ do
+                H.label ! A.class_ "form-check-label" ! A.for "game__subAll" $ do
+                    "Show everybody's guesses"
+                    H.input ! A.class_ "form-check-input" ! A.name "subscription" ! A.type_ "radio" ! A.value "SubAll"
+            H.div ! A.class_ "radio form-group" $ do
+                H.label ! A.class_ "form-check-label" ! A.for "game__subSelf" $ do
+                    "Only show my guesses"
+                    H.input ! A.class_ "form-check-input" ! A.name "subscription" ! A.type_ "radio" ! A.value "SubSelf"
     H.header ! class_ "guessTitle" $
         H.h2 "Last 8 guesses"
     H.ul ! A.id "game__list" ! A.class_ "game__list" $ do

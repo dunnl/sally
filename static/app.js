@@ -152,16 +152,15 @@ var SallyGame = function SallyGame(socketUrl, gameUl, messageUl, gameElts, subsc
 
     this.socket.install();
 
+    this.subscription = "SubSelf";
+
     this.subscribeForm = subscribeForm;
 
     subscribeForm.addEventListener('change', function (e) {
-        console.log("The subscription value changed.");
-        console.log("The current value is " + subscribeForm.childNodes.value);
-        console.log(subscribeForm);
-        console.log(subscribeForm.elements);
-        console.log(subscribeForm.elements.value);
-        console.log(subscribeForm.childNodes);
-        console.log(subscribeForm.childNodes.value);
+        var fieldset = subscribeForm.elements["subscription"];
+        _this.subscription = fieldset.value;
+        _this.gameApp.clearAll();
+        _this.socket.renew(_this.subscription);
     });
 
     gameElts.form.addEventListener('submit', function (e) {
@@ -274,10 +273,10 @@ var _class = function () {
         }
     }, {
         key: "renew",
-        value: function renew() {
+        value: function renew(subscription) {
             var msg = {
                 "type": "renew",
-                "body": "SubSelf"
+                "body": subscription
             };
             try {
                 this.socket.send(JSON.stringify(msg));
