@@ -128,11 +128,20 @@ socketsDiv = do
     H.div ! A.id "message__div" $ do
         H.ul ! A.id "message__list" ! A.class_ "message__list" $ ""
 
+-- | TODO: Occurence of magic number
 gameDiv :: View H.Html -> [GsRes] -> Html
 gameDiv v gsrs = do
     H.header "Submit a guess"
     H.hr
     guessView v
+    H.form ! A.id "game__subform" $ do
+        --H.fieldset ! A.id "game__subfield" $ do
+            --H.div ! A.class_ "radio form-group" $ do
+                H.input ! A.name "subscription" ! A.type_ "radio" ! A.id "game__SubAll" ! A.value "SubAll"
+                H.label ! A.for "game__subAll" $ "Subscribe to all"
+            --H.div ! A.class_ "radio form-group" $ do
+                H.input ! A.name "subscription" ! A.type_ "radio" ! A.id "game__SubSelf" ! A.value "SubSelf"
+                H.label ! A.for "game__subSelf" $ "Subscribe to self"
     H.header ! class_ "guessTitle" $
         H.h2 "Last 8 guesses"
     H.ul ! A.id "game__list" ! A.class_ "game__list" $ do

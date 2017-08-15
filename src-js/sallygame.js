@@ -9,7 +9,7 @@ const cutValOfNode = function (el) {
 }
 
 export default class SallyGame {
-    constructor (socketUrl, gameUl, messageUl, gameElts) {
+    constructor (socketUrl, gameUl, messageUl, gameElts, subscribeForm) {
         this.gameApp = new MsgApp.App(gameUl, 8, MsgApp.order["AppendAtTop"]);
 
         this.msgApp = new MsgApp.App(messageUl, 8, MsgApp.order["AppendAtBottom"]);
@@ -17,6 +17,18 @@ export default class SallyGame {
         this.socket = new SallySocket(socketUrl, this.handleServerMsg, this.handleClientMsg, this.handleGuess);
 
         this.socket.install();
+
+        this.subscribeForm = subscribeForm;
+
+        subscribeForm.addEventListener('change', e => {
+            console.log("The subscription value changed.")
+            console.log("The current value is " + subscribeForm.childNodes.value);
+            console.log(subscribeForm)
+            console.log(subscribeForm.elements)
+            console.log(subscribeForm.elements.value)
+            console.log(subscribeForm.childNodes)
+            console.log(subscribeForm.childNodes.value)
+        });
 
         gameElts.form.addEventListener('submit', e => {
             if (e.preventDefault) e.preventDefault();

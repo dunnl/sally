@@ -25,3 +25,12 @@ This should do the trick, assuming the database is in order
 ```
 sally run --port 8080 -d db.sqlite
 ```
+
+# Building
+```
+npm install
+npm run build
+stack build
+sqlite3 sally.sqlite3 < scripts/initdb.sql
+stack exec sally -- run -p 8080 -d sally.sqlite3
+```
