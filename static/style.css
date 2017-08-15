@@ -1,7 +1,23 @@
 body {
-    padding: 50px;
     color: #404040;
     font-size: 14px;
+}
+
+#navbar {
+    margin-bottom: 20px;
+}
+
+#welcome {
+    padding: 60px 0;
+    text-align: center;
+}
+
+#faq {
+}
+
+#qa__section {
+    max-width: 800px;
+    margin: auto;
 }
 
 .small-header {
@@ -82,25 +98,9 @@ form .submit {
     float: right;
 }
 
-form .input {
-    margin-left: 150px;
-}
-
-form .line {
-    margin-bottom: 18px;
-}
-
 header {
     font-size: 22px;
     padding-bottom: 10px;
-}
-
-label {
-    float: left;
-    padding-top: 6px;
-    margin-right: 20px;
-    text-align: right;
-    width: 130px;
 }
 
 //Game list (guesses)

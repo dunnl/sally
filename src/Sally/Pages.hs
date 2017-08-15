@@ -85,8 +85,8 @@ mainHtml v gsrs = do
 
 welcome :: Html
 welcome = do
-    H.div ! A.class_ "row" $ do
-        H.div ! A.class_ "col-md-8 col-md-offset-2" $ do
+    H.div ! A.id "welcome" ! A.class_ "row" $ do
+        H.div ! A.class_ "col-md-12" $ do
             H.header $
                 H.h1 $ do
                     "Silly Sally"
@@ -96,7 +96,7 @@ welcome = do
 faq :: Html
 faq = do
     H.div ! A.class_ "row" $ do
-        H.section ! A.class_ "col-md-8 col-md-offset-2 qa__header" $ do
+        H.section ! A.class_ "col-md-12" ! A.id "qa__section" $ do
             H.dl ! A.id "qa__list" $ do
                 H.dt $ do
                     H.span ! A.class_ "qa__lead" $ "Q:"
@@ -112,13 +112,13 @@ faq = do
                             "Silly Sally likes Haskell, but not Python."
 navbar :: Html
 navbar = do
-    H.nav ! A.class_ "navbar" $ do
+    H.nav ! A.id "navbar" ! A.class_ "navbar navbar-dark bg-primary" $ do
         H.div ! A.class_ "container" $ do
-            H.div ! A.class_ "navbar-header" $
-                H.a ! A.href "/" ! A.class_ "navbar-brand" $
-                    "Home"
-            H.ul ! A.class_ "nav navbar-nav navbar-right" $ do
-                H.li $ H.a ! href "about" $ "About"
+            H.a ! A.href "/" ! A.class_ "navbar-brand" $
+                "Home"
+            H.ul ! A.class_ "navbar-nav" $ do
+                H.li ! A.class_ "nav-item" $ 
+                    H.a ! A.class_ "nav-link" ! href "about" $ "About"
 --                H.li $ H.a ! href "data" $ "Data"
 
 socketsDiv :: Html 
@@ -135,15 +135,16 @@ gameDiv v gsrs = do
     H.hr
     guessView v
     H.form ! A.id "game__subform" $ do
-        H.fieldset ! A.id "game__subfield" $ do
+        H.fieldset ! A.id "game__subfield" ! A.class_ "form-group" $ do
+            H.legend $ "Subscription"
             H.div ! A.class_ "form-check" $ do
                 H.label ! A.class_ "form-check-label" ! A.for "game__subAll" $ do
-                    "Show everybody's guesses"
                     H.input ! A.class_ "form-check-input" ! A.name "subscription" ! A.type_ "radio" ! A.value "SubAll"
-            H.div ! A.class_ "radio form-group" $ do
+                    " Show everybody's guesses"
+            H.div ! A.class_ "form-check" $ do
                 H.label ! A.class_ "form-check-label" ! A.for "game__subSelf" $ do
-                    "Only show my guesses"
                     H.input ! A.class_ "form-check-input" ! A.name "subscription" ! A.type_ "radio" ! A.value "SubSelf"
+                    " Only show my guesses"
     H.header ! class_ "guessTitle" $
         H.h2 "Last 8 guesses"
     H.ul ! A.id "game__list" ! A.class_ "game__list" $ do
@@ -158,12 +159,12 @@ guessForm = Gs
 guessView :: View H.Html -> H.Html
 guessView view = do
     DB.form view "/" ! A.id "guess__form" $ do
-        H.div ! class_ "line" $ do
+        H.div ! class_ "form-group" $ do
             DB.label "likes" view "Silly Sally likes"
-            H.div ! class_ "input" $ DB.inputText "likes" view
-        H.div ! class_ "line" $ do
-            DB.label "notlikes" view "But not"
-            H.div ! class_ "input" $ DB.inputText "notlikes" view
+            DB.inputText "likes" view ! A.class_"form-control"
+        H.div ! class_ "form-group" $ do
+            DB.label "notelikes" view "But not"
+            DB.inputText "notlikes" view ! A.class_"form-control"
         DB.inputSubmit "Submit" ! class_ "submit"
 
 prettyGuess :: GsRes -> H.Html
