@@ -201,24 +201,24 @@ webSocketsApp conf state pending = do
     greetClient thisClient state
     flip finally (clientLeaves thisClient state) $ forever $ do
         msg     <- WS.receiveData conn
-        handleClientMsg conf state uuid conn msg
+        handleClientMsg conf state thisClient msg
 
 handleClientMsg :: AppConfig
                 -> MVar ServerState
-                -> UUID
-                -> Connection
+                -> Client
                 -> ByteString
                 -> IO ()
-handleClientMsg conf st uuid conn encmsg = 
+handleClientMsg conf st client encmsg = 
     case msg of
         Nothing ->
             error ("Failed to handle: " ++ (show encmsg))
         Just (ClMsgGs guess) -> do
-            res <- gsResOf (clientToGuess uuid guess)
+            res <- gsResOf (clientToGuess thisUuid guess)
             withConnection (sqliteFile conf) (insertGuess res)
             sendMessage All (SvGs res) =<< (readMVar st)
   where
     msg = (J.decode encmsg :: Maybe ClMessage)
+    thisUuid = uuid client
 
 -- | The main exported function, which accepts global application configuration
 -- data and wraps a WAI.Application with this websocket app
