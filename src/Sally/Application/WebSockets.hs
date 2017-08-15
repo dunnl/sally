@@ -85,7 +85,7 @@ rmClient = Map.delete . clUuid
 subscribeClient :: Client -> Subscription -> MVar ServerState -> IO ()
 subscribeClient cl sub st =
     modifyMVar_ st $
-        return. Map.adjust (\cl0 -> cl0 {clSub = clSub cl}) (clUuid cl)
+        return. Map.adjust (\cl0 -> cl0 {clSub = sub}) (clUuid cl)
 
 -- | A message from server to client
 data SvMessage =
@@ -207,13 +207,18 @@ handleClientMsg conf st client encmsg =
         Just (ClMsgGs guess) -> do
             res <- gsResOf (clientToGuess thisUuid guess)
             withConnection (sqliteFile conf) (insertGuess res)
-            broadcast allClients (SvGs res) =<< (readMVar st)
+            case clSub client of
+                SubSelf ->
+                    broadcast (\c -> (toClient client c || allSubscribed c)) (SvGs res) =<< (readMVar st)
+                SubAll ->
+                    broadcast allSubscribed (SvGs res) =<< (readMVar st)
         Just (ClMsgRenew subc) -> do
             let getGuesses = if subc == SubAll
                              then  nGuessFrom 8
                              else  nGuessFromUser 8 thisUuid
             guesses <- withConnection (sqliteFile conf) getGuesses
-            forM_ guesses $ \guess ->
+            subscribeClient client subc st
+            forM_ (reverse guesses) $ \guess ->
                 broadcast (toClient client) (SvGs guess) =<< readMVar st
   where
     msg = (J.decode encmsg :: Maybe ClMessage)

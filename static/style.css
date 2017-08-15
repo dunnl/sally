@@ -79,6 +79,10 @@ body {
     font-size: 120%
 }
 
+.you {
+    color: blue;
+}
+
 .true {
     color: #0f0;
     font-weight: bold;
@@ -104,6 +108,11 @@ header {
 }
 
 //Game list (guesses)
+.game__guessdiv {
+    max-width: 800px;
+    margin: auto;
+}
+
 .game__list {
     list-style:none;
 }
@@ -114,6 +123,11 @@ header {
     margin: 10px auto;
     text-align: center;
     max-width: 800px;
+}
+
+#about__section {
+    max-width: 800px;
+    margin: auto;
 }
 
 // Program messages

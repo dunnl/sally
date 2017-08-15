@@ -6,6 +6,7 @@ window.onload = function () {
           form     : document.getElementById('guess__form')
         , likes    : document.getElementById('guess.likes')
         , notlikes : document.getElementById('guess.notlikes')
+        , guessHeader : document.getElementById('guess__header')
     }
 
 

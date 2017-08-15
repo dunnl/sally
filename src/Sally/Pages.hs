@@ -48,24 +48,22 @@ aboutHtml =  do
 aboutContents :: Html
 aboutContents = do
     H.div ! A.class_ "row" $ do
-        H.div ! A.class_ "col-md-8 col-md-offset-2" $ do
-            H.header $
-                H.h1 $ do
-                    "Silly Sally"
-                    H.small ! A.class_ "small-header" $ 
-                        "About"
-            H.section $ do
+        H.div ! A.class_ "col-md-12" $ do
+            H.section ! A.id "about__section" $ do
+                H.header $
+                    H.h1 $ do
+                        "Silly Sally"
+                        H.small ! A.class_ "small-header" $ 
+                            "About"
                 H.p $
                     "This application was my first excursion into web programming, with or without Haskell, \
                     \ and my first experience with Javascript. \
-                    \ My aim at the time was to use as much self-written code as possible instead of \
-                    \ relying on higher-abstraction libraries either in Haskell (Yesod, Persistent) \
-                    \ or Javascript (jQuery, React). Nonetheless I wanted to built a moderately complex service \
+                    \ The aim was built a moderately complex service \
                     \ with persistent storage, concurrency, and coordinated bidirectional communication between \
-                    \ the frontend and backend."
+                    \ the frontend and backend, but without relying on higher libraries like jQuery or Persistent."
 
                 H.p $
-                    "I used these libraries: Spock, Blaze, Websockets, sqlite-simple and (of course) Bootstrap"
+                    "I used these libraries: Spock, Blaze, Websockets, sqlite-simple and Bootstrap"
 
 mainHtml :: View H.Html -> [GsRes] -> Html
 mainHtml v gsrs = do
@@ -81,7 +79,10 @@ mainHtml v gsrs = do
                 H.div ! A.class_ "col-md-6" $ do
                     socketsDiv
                 H.div ! A.class_ "col-md-6" $ do
-                    gameDiv v gsrs
+                    gameDiv v
+            H.div ! A.class_ "row" $ do
+                H.div ! A.class_ "col-md-12" $ do
+                    gameGuessDiv gsrs
 
 welcome :: Html
 welcome = do
@@ -129,8 +130,8 @@ socketsDiv = do
         H.ul ! A.id "message__list" ! A.class_ "message__list" $ ""
 
 -- | TODO: Occurence of magic number
-gameDiv :: View H.Html -> [GsRes] -> Html
-gameDiv v gsrs = do
+gameDiv :: View H.Html -> Html
+gameDiv v = do
     H.header "Submit a guess"
     H.hr
     guessView v
@@ -139,16 +140,20 @@ gameDiv v gsrs = do
             H.legend $ "Subscription"
             H.div ! A.class_ "form-check" $ do
                 H.label ! A.class_ "form-check-label" ! A.for "game__subAll" $ do
-                    H.input ! A.class_ "form-check-input" ! A.name "subscription" ! A.type_ "radio" ! A.value "SubAll"
+                    H.input ! A.id "game__subAll" ! A.class_ "form-check-input" ! A.name "subscription" ! A.type_ "radio" ! A.value "SubAll"
                     " Show everybody's guesses"
             H.div ! A.class_ "form-check" $ do
-                H.label ! A.class_ "form-check-label" ! A.for "game__subSelf" $ do
-                    H.input ! A.class_ "form-check-input" ! A.name "subscription" ! A.type_ "radio" ! A.value "SubSelf"
+                H.label ! A.id "game__subSelf" ! A.class_ "form-check-label" ! A.for "game__subSelf" $ do
+                    H.input ! A.checked "checked" ! A.class_ "form-check-input" ! A.name "subscription" ! A.type_ "radio" ! A.value "SubSelf"
                     " Only show my guesses"
-    H.header ! class_ "guessTitle" $
-        H.h2 "Last 8 guesses"
-    H.ul ! A.id "game__list" ! A.class_ "game__list" $ do
-        forM_ gsrs prettyGuess
+
+gameGuessDiv :: [GsRes] -> Html
+gameGuessDiv gsrs = do
+    H.div ! A.id "game__guessdiv" $ do
+        H.header ! class_ "guessTitle" $
+            H.h2 ! A.id "guess__header" $ "Last 0 guesses"
+        H.ul ! A.id "game__list" ! A.class_ "game__list" $ do
+            forM_ gsrs prettyGuess
 
 guessForm :: (Monad m) => Form Html m Gs
 guessForm = Gs

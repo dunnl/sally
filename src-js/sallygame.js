@@ -22,6 +22,8 @@ export default class SallyGame {
 
         this.subscribeForm = subscribeForm;
 
+        this.gameElts = gameElts;
+
         subscribeForm.addEventListener('change', e => {
             var fieldset = subscribeForm.elements["subscription"]
             this.subscription = fieldset.value;
@@ -29,7 +31,7 @@ export default class SallyGame {
             this.socket.renew(this.subscription);
         });
 
-        gameElts.form.addEventListener('submit', e => {
+        this.gameElts.form.addEventListener('submit', e => {
             if (e.preventDefault) e.preventDefault();
 
             const newGuess = {
@@ -55,11 +57,9 @@ export default class SallyGame {
     }
 
     handleGuess = (gsRes, isSelf) => {
-        const nodes = mkGuessNodes(gsRes);
+        const nodes = mkGuessNodes(gsRes, isSelf);
         this.gameApp.pushNewLiWith(nodes);
-        if (isSelf) {
-            //this.gameApp.pushNewLiWith(nodes);
-        }
+        this.gameElts.guessHeader.innerText = "Last " + this.gameApp.length + " guesses";
     }
 
 }
@@ -72,7 +72,7 @@ var makeMessage = function (from, className, text) {
     return ([span, txtnd]);
 }
 
-const mkGuessNodes = function (gsRes) {
+const mkGuessNodes = function (gsRes, isSelf) {
     var msg = document.createElement("p");
     var meta = document.createElement("p");
 
@@ -90,6 +90,11 @@ const mkGuessNodes = function (gsRes) {
     } else {
         msg.innerHTML += "<span class=\"false\">Wrong</span>";
     }
-    meta.innerHTML += "Submitted <span class=\"time\">" + dateStr + " UST</span>";
+    if (!isSelf) {
+        meta.innerHTML += "Submitted by " + gsRes.resGs.gsUser + " at <span class=\"time\">" + dateStr + " UST</span>";
+    }
+    else {
+        meta.innerHTML += "Submitted by <span class=\"you\">you</span> at <span class=\"time\">" + dateStr + " UST</span>";
+    }
     return [msg, meta];
 }

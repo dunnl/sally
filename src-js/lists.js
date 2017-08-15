@@ -48,4 +48,8 @@ export class App {
             this.listNode.removeChild(this.listNode.lastChild);
         }
     }
+
+    get length () {
+        return this.listNode.childNodes.length;
+    }
 }

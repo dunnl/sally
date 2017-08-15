@@ -12,7 +12,8 @@ window.onload = function () {
     var gameElts = {
         form: document.getElementById('guess__form'),
         likes: document.getElementById('guess.likes'),
-        notlikes: document.getElementById('guess.notlikes')
+        notlikes: document.getElementById('guess.notlikes'),
+        guessHeader: document.getElementById('guess__header')
     };
 
     var messageUl = document.getElementById('message__list');
@@ -90,6 +91,11 @@ var App = exports.App = function () {
                 this.listNode.removeChild(this.listNode.lastChild);
             }
         }
+    }, {
+        key: "length",
+        get: function get() {
+            return this.listNode.childNodes.length;
+        }
     }]);
 
     return App;
@@ -137,11 +143,9 @@ var SallyGame = function SallyGame(socketUrl, gameUl, messageUl, gameElts, subsc
     };
 
     this.handleGuess = function (gsRes, isSelf) {
-        var nodes = mkGuessNodes(gsRes);
+        var nodes = mkGuessNodes(gsRes, isSelf);
         _this.gameApp.pushNewLiWith(nodes);
-        if (isSelf) {
-            //this.gameApp.pushNewLiWith(nodes);
-        }
+        _this.gameElts.guessHeader.innerText = "Last " + _this.gameApp.length + " guesses";
     };
 
     this.gameApp = new MsgApp.App(gameUl, 8, MsgApp.order["AppendAtTop"]);
@@ -156,6 +160,8 @@ var SallyGame = function SallyGame(socketUrl, gameUl, messageUl, gameElts, subsc
 
     this.subscribeForm = subscribeForm;
 
+    this.gameElts = gameElts;
+
     subscribeForm.addEventListener('change', function (e) {
         var fieldset = subscribeForm.elements["subscription"];
         _this.subscription = fieldset.value;
@@ -163,7 +169,7 @@ var SallyGame = function SallyGame(socketUrl, gameUl, messageUl, gameElts, subsc
         _this.socket.renew(_this.subscription);
     });
 
-    gameElts.form.addEventListener('submit', function (e) {
+    this.gameElts.form.addEventListener('submit', function (e) {
         if (e.preventDefault) e.preventDefault();
 
         var newGuess = {
@@ -187,7 +193,7 @@ var makeMessage = function makeMessage(from, className, text) {
     return [span, txtnd];
 };
 
-var mkGuessNodes = function mkGuessNodes(gsRes) {
+var mkGuessNodes = function mkGuessNodes(gsRes, isSelf) {
     var msg = document.createElement("p");
     var meta = document.createElement("p");
 
@@ -202,7 +208,11 @@ var mkGuessNodes = function mkGuessNodes(gsRes) {
     } else {
         msg.innerHTML += "<span class=\"false\">Wrong</span>";
     }
-    meta.innerHTML += "Submitted <span class=\"time\">" + dateStr + " UST</span>";
+    if (!isSelf) {
+        meta.innerHTML += "Submitted by " + gsRes.resGs.gsUser + " at <span class=\"time\">" + dateStr + " UST</span>";
+    } else {
+        meta.innerHTML += "Submitted by <span class=\"you\">you</span> at <span class=\"time\">" + dateStr + " UST</span>";
+    }
     return [msg, meta];
 };
 
