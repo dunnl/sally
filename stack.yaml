@@ -82,5 +82,3 @@ image:
         base: fpco/stack-run
         add:
             static/: /static/
-        entrypoints:
-            - stack 
