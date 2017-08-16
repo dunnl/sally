@@ -37,4 +37,5 @@ runMainWith conf = do
     sp <- makeSpockAppFrom conf
     let sp' = withStatic sp
     fullApp <- addSocketsApp conf sp'
+    print "Running sally"
     run (port conf) fullApp

@@ -29,3 +29,6 @@ clean:
 	-npm run clean 2&> /dev/null
 
 all: js-init js-build database-init alpine build
+
+image:
+	stack image container

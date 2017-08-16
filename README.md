@@ -11,18 +11,39 @@ Notes:
 server expects to find the bundled file under `static/`, which is handled
 automatically by NPM.
 
-* The `stack.yaml` is currently setup to build inside a docker container.
+* The `stack.yaml` is currently setup to build inside a docker container. The
+  docker container is `alpine:edge` (which now has ghc available) with few extra
+  utilities that stack needs to compile the project.
 
-The full procedure to get up and running is
+The full procedure to build/initialize:
 
 ```
 npm install
 npm run build
-stack docker pull
+docker build -t alpine-sally -f scripts/Dockerfile .
 stack build
 sqlite3 sally.sqlite3 < scripts/initdb.sql
+```
+
+or simply
+
+```
+make all
+```
+
+To execute:
+
+```
 stack exec sally -- run -p 8080 -d sally.sqlite3
 ```
+
+or 
+
+```
+stack image container
+docker run dunnl/sally sally -p 8080 -d sally.sqlite
+```
+
 
 ## Testing
 
