@@ -73,7 +73,7 @@ extra-package-dbs: []
 #
 docker:
     enable: true
-    repo: "alpine-ghc-sally"
+    repo: "alpine-sally:latest"
     run-args: ["--publish=8080:8080"]
 
 image:
