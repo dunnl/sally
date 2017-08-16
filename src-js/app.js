@@ -14,7 +14,7 @@ window.onload = function () {
     const gameUl = document.getElementById('game__list');
     const subField = document.getElementById('game__subform');
 
-    var game = new SallyGame("ws://localhost:8080", gameUl, messageUl, gameElts, subField);
+    var game = new SallyGame("ws:///:8080", gameUl, messageUl, gameElts, subField);
 
     return true;
 }
