@@ -5,7 +5,8 @@
   "main": "src-js/app.js",
   "scripts": {
     "test": "echo 'No test command specified yet'",
-    "build": "browserify src-js/app.js -t [babelify] -o static/app.js"
+    "build": "browserify src-js/app.js -t [babelify] -o static/app.js",
+    "clean": "rm static/app.js"
   },
   "repository": {
     "type": "git",
