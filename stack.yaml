@@ -73,7 +73,7 @@ extra-package-dbs: []
 #
 docker:
     enable: true
-    repo: "fpco/stack-build"
+    repo: "nilcons/ghc-musl:base"
     run-args: ["--net=bridge", "--publish=8080:8080"]
 
 image:

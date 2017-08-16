@@ -10,9 +10,13 @@ maintainer:          lawrence.dunn@hushmail.com
 copyright:           Copyright: (c) 2016 Lawrence Dunn
 category:            General
 build-type:          Simple
-extra-source-files:  README.md
 cabal-version:       >=1.10
 
+extra-source-files: static/style.css
+                  , static/app.js
+                  , src-js/*.js
+                  , package.json
+                  , README.md
 library
   hs-source-dirs:      src
   exposed-modules:     Sally.Config

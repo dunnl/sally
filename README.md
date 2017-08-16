@@ -3,34 +3,28 @@
 A toy web app implementing the Silly Sally game. Supported by the warp server
 and a SQLite database.
 
-# Initializing
+## Building
 
-Eventually
+Notes:
 
-```
-sally initialize
-```
+* This project includes raw javascript modules managed by NPM/package.json. The
+server expects to find the bundled file under `static/`, which is handled
+automatically by NPM.
 
-will work. Until then, you must manually create the database:
+* The `stack.yaml` is currently setup to build inside a docker container.
 
-```
-sqlite3 db.sqlite < scripts.initdb
-```
+The full procedure to get up and running is
 
-
-# Deploying
-
-This should do the trick, assuming the database is in order
-
-```
-sally run --port 8080 -d db.sqlite
-```
-
-# Building
 ```
 npm install
 npm run build
+stack docker pull
 stack build
 sqlite3 sally.sqlite3 < scripts/initdb.sql
 stack exec sally -- run -p 8080 -d sally.sqlite3
 ```
+
+## Testing
+
+There is no test suite for this project (!). It's an old project and not really
+worth building a test suite for now.
