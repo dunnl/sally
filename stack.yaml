@@ -73,12 +73,12 @@ extra-package-dbs: []
 #
 docker:
     enable: true
-    repo: "nilcons/ghc-musl:base"
-    run-args: ["--net=bridge", "--publish=8080:8080"]
+    repo: "alpine-ghc-sally"
+    run-args: ["--publish=8080:8080"]
 
 image:
     container:
         name: dunnl/sally
-        base: fpco/stack-run
+        base: alpine:edge
         add:
             static/: /static/
