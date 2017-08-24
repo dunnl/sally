@@ -73,7 +73,7 @@ extra-package-dbs: []
 #
 docker:
     enable: true
-    repo: "alpine-sally:latest"
+    repo: "alpine-stack:latest"
     run-args: ["--publish=8080:8080"]
 
 image:
@@ -82,3 +82,6 @@ image:
         base: alpine:edge
         add:
             static/: /static/
+            .: /
+        entrypoints:
+            - sally
