@@ -73,15 +73,12 @@ extra-package-dbs: []
 #
 docker:
     enable: true
-    repo: "alpine-stack:latest"
+    repo: "alpine-sally-build:latest"
     run-args: ["--publish=8080:8080"]
 
 image:
     container:
         name: dunnl/sally
-        base: alpine:edge
-        add:
-            static/: /static/
-            .: /
+        base: "alpine-sally-run:latest"
         entrypoints:
             - sally

@@ -18,8 +18,11 @@ database-init:
 
 init-all: js-init database
 
-alpine:
-	docker build -t alpine-stack -f scripts/Dockerfile .
+alpine-build:
+	docker build -t alpine-sally-build -f scripts/sally-build.Dockerfile .
+
+alpine-run:
+	docker build -t alpine-sally-run -f scripts/sally-run.Dockerfile .
 
 run:
 	stack exec sally -- run -p 8080 -d sally.sqlite3
