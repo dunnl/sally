@@ -177,8 +177,9 @@ debugState mst = do
 clientLeaves :: Client -> MVar ServerState -> IO ()
 clientLeaves cl mst = do
     modifyMVar_ mst $ return. rmClient cl
-    broadcast (not . toClient cl) byeMsg =<< mst
-    broadcastNumClients st =<< mst
+    withMVar mst $ \st -> do
+        broadcast (not . toClient cl) byeMsg st
+        broadcastNumClients st
     print "A client is leaving. New state:"
     debugState mst
   where
