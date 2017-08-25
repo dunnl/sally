@@ -226,7 +226,6 @@ handleClientMsg conf st client encmsg =
 
 -- | The main exported function, which accepts global application configuration
 -- data and wraps a WAI.Application with this websocket app
-addSocketsApp :: AppConfig -> Application -> IO Application
-addSocketsApp conf app = do
-    wsSt <- newServerState 
+wrapWithSockets :: AppConfig -> ServerState -> Application -> IO Application
+wrapWithSockets conf wsSt app = do
     return $ websocketsOr WC.defaultConnectionOptions (webSocketsApp conf wsSt) app

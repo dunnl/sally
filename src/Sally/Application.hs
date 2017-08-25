@@ -34,8 +34,9 @@ withStatic = staticPolicy $ hasPrefix "static"
 -- | Run the main application server
 runMainWith :: AppConfig -> IO ()
 runMainWith conf = do
-    sp <- makeSpockAppFrom conf
+    wsSt <- newServerState
+    sp <- makeSpockAppFrom conf wsSt
     let sp' = withStatic sp
-    fullApp <- addSocketsApp conf sp'
+    fullApp <- wrapWithSockets conf wsSt sp'
     print "Running sally"
     run (port conf) fullApp

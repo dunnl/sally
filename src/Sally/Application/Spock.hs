@@ -24,18 +24,25 @@ import Sally.Game
 import Sally.Config
 import Sally.SpockUtil
 import Sally.Pages
+import Sally.Application.Websockets
 
 {- We choose not to use Spock's database connection management because it would
  - have to share it the Websockets app. It is easier to manage it ourselves.
  -}
 
+type NoSession = ()
+type NoDatabase = ()
+type SpockState = ServerState
+
 -- | Main export
-makeSpockAppFrom :: AppConfig -> IO Application
-makeSpockAppFrom conf = do
-    spockCfg  <- defaultSpockCfg () PCNoDatabase  ()
+makeSpockAppFrom :: AppConfig -> SpockState -> IO Application
+makeSpockAppFrom conf state = do
+    spockCfg  <- defaultSpockCfg NoSession PCNoDatabase state
     spockAsApp $ spock spockCfg (spockAppWith conf)
 
-spockAppWith :: AppConfig -> SpockM () () () ()
+MySpockM = SpockM NoSession NoDatabase SpockState
+
+spockAppWith :: AppConfig -> MySpockM ()
 spockAppWith (AppConfig db _ _)= do
     -- GET /
     get root $ do
