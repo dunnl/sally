@@ -9,6 +9,7 @@
 {-# language ViewPatterns #-}
 {-# language DeriveGeneric     #-}
 
+-- Docker test
 module Sally.Application.WebSockets (
     addSocketsApp
 ) where
@@ -51,10 +52,11 @@ instance FromJSON Subscription
 data Client = Client {
       clUuid :: UUID          -- ^ Clients' UUID
     , clConn :: WS.Connection -- ^ Websocket connection
-    , clSub  :: Subscription
+    , clSub  :: Subscription  -- ^ The client's subscription
 }
 
 instance FromJSON ClientGuess
+    -- Filled in by DeriveGeneric
 
 instance Show Client where
     show (Client uuid _ _) = "Client " ++ show uuid
@@ -81,6 +83,9 @@ addClient client clients =
 
 rmClient :: Client -> ServerState -> ServerState
 rmClient = Map.delete . clUuid
+
+resetState :: ServerState -> ServerState
+resetState _ = const emptyState
 
 subscribeClient :: Client -> Subscription -> MVar ServerState -> IO ()
 subscribeClient cl sub st =
@@ -145,8 +150,13 @@ broadcast pred msg st =
         when (pred client) $
             WS.sendTextData (clConn client) (J.encode msg)
 
+allClients :: Client -> Bool
 allClients = const True
+
+allSubscribed :: Client -> Bool
 allSubscribed c = SubAll == clSub c
+
+toClient :: Client -> Client -> Bool
 toClient client = (==) client
 
 broadcastNumClients :: ServerState -> IO ()
@@ -172,9 +182,13 @@ clientLeaves cl mst = do
 greetClient :: Client -> MVar ServerState -> IO ()
 greetClient cl mst = do
     withMVar mst $ \st -> do
+        -- Say hi to the new client
         broadcast (toClient cl) greetMsg st
+        -- Send the new client their UUID
         broadcast (toClient cl) (SvUuid $ toText thisUuid) st
+        -- Let others know of a new arrival
         broadcast (not . toClient cl) annMsg    st
+        -- Remind everybody how many clients are connected
         broadcastNumClients st
   where
     thisUuid = clUuid cl

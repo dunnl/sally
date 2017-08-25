@@ -3,45 +3,39 @@
 A toy web app implementing the Silly Sally game. Supported by the warp server
 and a SQLite database.
 
-## Building
+## Initialization steps
 
-Notes:
-
-* This project includes raw javascript modules managed by NPM/package.json. The
-server expects to find the bundled file under `static/`, which is handled
-automatically by NPM.
-
-* The `stack.yaml` is currently setup to build inside a docker container. The
-  docker container is `alpine:edge` (which now has ghc available) with few extra
-  utilities that stack needs to compile the project.
-
-The full procedure to build/initialize:
+Sally uses raw javascript managed with NPM. To build those files, run 
 
 ```
 npm install
+scripts/set_js_domain.sh "<URL for websocket connections">
 npm run build
-docker build -t alpine-sally -f scripts/Dockerfile .
-stack build
-sqlite3 sally.sqlite3 < scripts/initdb.sql
 ```
 
-or simply
+## Building with Docker
+
+The build system uses two Docker images that must be built before building and running the main application. Both are based on [alpine linux](https://alpinelinux.org). The build image (also used for `stack exec`) adds GHC (which exists now in alpine edge) and some other things needed for stack. The runtime image merely adds Sqlite3 to create an empty initial sqlite3 database. The main executable is statically linked in the build image to ensure the runtime image can stay small.
 
 ```
-make all
+# These processes should not take more than a minute or so, maximum
+make alpine-build # Approximately 1GB
+make alpine-run   # Approximately 10MB
 ```
 
-To execute:
+You can use stack like normal now. Be aware that `stack exec` runs slowly because of the time required to spin-up the large build image into a container. The executable will located inside the images at `/usr/local/bin/sally` and runs in the directory `/sally`, where the directory `static/` and database `sally.sqlite3` have been copied during the image creation. To create a docker image containing the executable within the runtime image above, run
 
 ```
-stack exec sally -- run -p 8080 -d sally.sqlite3
-```
-
-or 
-
-```
+#Approximately 30MB
 stack image container
-docker run dunnl/sally sally -p 8080 -d sally.sqlite
+```
+
+And to run the final image as a Docker container:
+
+```
+docker run dunnl/sally sally -p 8080 -d sally.sqlite3
+# or with entrypoint set
+docker run dunnl/sally-sally -p 8080 -d sally.sqlite3
 ```
 
 
@@ -49,7 +43,3 @@ docker run dunnl/sally sally -p 8080 -d sally.sqlite
 
 There is no test suite for this project (!). It's an old project and not really
 worth building a test suite for now.
-
-## Docker caveats
-
-Stack automatically volume-mounts the current directory into the container
