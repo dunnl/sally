@@ -25,6 +25,7 @@ import Data.Text (Text)
 import Data.Foldable (forM_)
 
 import Sally.Game
+import Sally.Application.WebSockets
 
 includes :: Html
 includes = do
@@ -32,8 +33,10 @@ includes = do
              ! type_ "text/css"
              ! href "https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css"
     H.link   ! rel "stylesheet" ! type_ "text/css" ! href "/static/style.css"
-    H.script ! src "/static/app.js" $ ""
     H.script ! src "https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js" $ ""
+
+includeWebSockets :: Html
+includeWebSockets = H.script ! src "/static/app.js" $ ""
 
 aboutHtml :: Html
 aboutHtml =  do
@@ -70,6 +73,7 @@ mainHtml v gsrs = do
     H.head $ do
         H.title "Silly Sally"
         includes
+        includeWebSockets 
     H.body $ do
         H.div ! A.class_ "container" $ do
             navbar
@@ -200,3 +204,19 @@ prettyTime :: UTCTime -> H.Html
 prettyTime tm =
     H.span ! class_ "time" $ do
         toHtml $ formatTime defaultTimeLocale "%D %R UST" tm
+
+----------------------
+
+prettyState :: ServerState -> Html
+prettyState st =  do
+    H.head $ do
+        H.title "Silly Sally"
+        includes
+    H.body $ do
+        H.div ! A.class_ "container" $ do
+            navbar
+            toHtml ("Number of clients:" :: String)
+            toHtml $ numClients st
+            ul $ do
+                flip foldMap st $ \client ->
+                    li $ toHtml (show client)

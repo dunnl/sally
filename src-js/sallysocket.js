@@ -11,7 +11,7 @@ export default class {
         this.self = this;
     }
 
-    install () {
+    install (postInstallAction) {
         if (!this.socketUrl) {
             throw("SallySocket: No socketUrl specified")
         }
@@ -23,6 +23,9 @@ export default class {
         }
         socket.onopen = e => {
             this.handleCliMsg("Socked opened successfully");
+            if (postInstallAction) {
+                postInstallAction();
+            }
         }
         socket.onclose = e => {
             this.handleCliMsg("Closing socket");

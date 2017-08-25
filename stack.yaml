@@ -74,7 +74,7 @@ extra-package-dbs: []
 docker:
     enable: true
     repo: "alpine-sally-build:latest"
-    run-args: ["--publish=8080:8080"]
+    run-args: ["--net=bridge", "--publish=8080:8080"]
 
 image:
     container:

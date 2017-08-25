@@ -26,27 +26,37 @@ const addLi = function (list, li, maxItems, msgOrder) {
 }
 
 export class App {
-    constructor(listNode, maxItems, msgOrder) {
+    constructor(listNode, maxItems, msgOrder, postAction) {
         this.listNode = listNode;
         this.maxItems = maxItems;
         this.msgOrder = msgOrder;
+        this.postAction = postAction;
     }
 
     pushNewLiWith(nodes) {
         var newli = document.createElement('li');
         nodes.forEach(function (n) {newli.appendChild(n)});
         addLi(this.listNode, newli, this.maxItems, this.msgOrder);
+        this.update();
+    }
+
+    update() {
+        if (this.postAction) {
+            this.postAction();
+        }
     }
 
     pushTextLi(txt) {
         var node = document.createTextNode(txt)
         this.pushNewLiWith([node]);
+        this.update();
     }
 
     clearAll(txt) {
         while(this.listNode.lastChild) {
             this.listNode.removeChild(this.listNode.lastChild);
         }
+        this.update();
     }
 
     get length () {

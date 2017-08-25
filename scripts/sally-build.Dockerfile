@@ -6,4 +6,5 @@ RUN echo http://dl-cdn.alpinelinux.org/alpine/edge/testing >> /etc/apk/repositor
 RUN apk add sqlite
 ADD scripts/ /sally/scripts
 RUN /usr/bin/sqlite3 /sally/sally.sqlite3 < /sally/scripts/initdb.sql
+RUN chmod a+rw /sally -R
 WORKDIR /sally

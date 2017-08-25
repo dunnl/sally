@@ -48,10 +48,16 @@ spockAppWith (AppConfig db _ _)= do
     -- GET /
     get root $ do
         (v, _) <- runForm "guess" guessForm
-        --gs     <- liftIO $ withConnection db (nGuessFrom 8)
         blaze $ mainHtml v []
     get "about" $ do
         blaze aboutHtml
+    get "data" $ do
+        mst <- getState
+        st <- liftIO $ readMVar mst
+        blaze (prettyState st)
+    post "reset" $ do
+        mst <- getState
+        liftIO $ modifyMVar_ mst (return. resetState)
     -- POST /
     post root $ do
         (_, m) <- runForm "guess" guessForm

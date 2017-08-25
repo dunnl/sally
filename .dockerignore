@@ -1,3 +1,8 @@
-# These two directories are the majority of unnecessary files sent to Docker
-.stack-work/
-.git/
+.stack-work/*
+.git/*
+.node_modules/*
+screenshot*
+
+*
+!scripts
+!static

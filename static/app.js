@@ -20,7 +20,7 @@ window.onload = function () {
     var gameUl = document.getElementById('game__list');
     var subField = document.getElementById('game__subform');
 
-    var game = new _sallygame2.default("ws://sally.dunnl.io", gameUl, messageUl, gameElts, subField);
+    var game = new _sallygame2.default("ws://localhost:8080", gameUl, messageUl, gameElts, subField);
 
     return true;
 };
@@ -61,12 +61,13 @@ var order = exports.order = {
 };
 
 var App = exports.App = function () {
-    function App(listNode, maxItems, msgOrder) {
+    function App(listNode, maxItems, msgOrder, postAction) {
         _classCallCheck(this, App);
 
         this.listNode = listNode;
         this.maxItems = maxItems;
         this.msgOrder = msgOrder;
+        this.postAction = postAction;
     }
 
     _createClass(App, [{
@@ -77,12 +78,21 @@ var App = exports.App = function () {
                 newli.appendChild(n);
             });
             addLi(this.listNode, newli, this.maxItems, this.msgOrder);
+            this.update();
+        }
+    }, {
+        key: "update",
+        value: function update() {
+            if (this.postAction) {
+                this.postAction();
+            }
         }
     }, {
         key: "pushTextLi",
         value: function pushTextLi(txt) {
             var node = document.createTextNode(txt);
             this.pushNewLiWith([node]);
+            this.update();
         }
     }, {
         key: "clearAll",
@@ -90,6 +100,7 @@ var App = exports.App = function () {
             while (this.listNode.lastChild) {
                 this.listNode.removeChild(this.listNode.lastChild);
             }
+            this.update();
         }
     }, {
         key: "length",
@@ -142,19 +153,45 @@ var SallyGame = function SallyGame(socketUrl, gameUl, messageUl, gameElts, subsc
         _this.msgApp.pushNewLiWith(makeMessage("Server", "server-msg", txt));
     };
 
+    this.setSubscription = function () {
+        var fieldset = _this.subscribeForm.elements["subscription"];
+        _this.subscription = fieldset.value;
+        _this.gameApp.clearAll();
+        console.log("Attempting to renew with " + _this.socket);
+        _this.socket.renew(_this.subscription);
+    };
+
+    this.updateGuessCount = function () {
+        if (_this.subscription === "SubAll") {
+            var globalFlag = " (global)";
+        } else {
+            var globalFlag = "";
+        }
+        switch (_this.gameApp.length) {
+            case 0:
+                _this.gameElts.guessHeader.innerText = "No guesses yet" + globalFlag;
+                break;
+            case 1:
+                _this.gameElts.guessHeader.innerText = "Last guess" + globalFlag;
+                break;
+            default:
+                _this.gameElts.guessHeader.innerText = "Last " + _this.gameApp.length + " guesses" + globalFlag;
+                break;
+        }
+    };
+
     this.handleGuess = function (gsRes, isSelf) {
         var nodes = mkGuessNodes(gsRes, isSelf);
         _this.gameApp.pushNewLiWith(nodes);
-        _this.gameElts.guessHeader.innerText = "Last " + _this.gameApp.length + " guesses";
     };
 
-    this.gameApp = new MsgApp.App(gameUl, 8, MsgApp.order["AppendAtTop"]);
+    this.gameApp = new MsgApp.App(gameUl, 8, MsgApp.order["AppendAtTop"], this.updateGuessCount.bind(this));
 
     this.msgApp = new MsgApp.App(messageUl, 8, MsgApp.order["AppendAtBottom"]);
 
     this.socket = new _sallysocket2.default(socketUrl, this.handleServerMsg, this.handleClientMsg, this.handleGuess);
 
-    this.socket.install();
+    this.socket.install(this.setSubscription.bind(this));
 
     this.subscription = "SubSelf";
 
@@ -163,10 +200,7 @@ var SallyGame = function SallyGame(socketUrl, gameUl, messageUl, gameElts, subsc
     this.gameElts = gameElts;
 
     subscribeForm.addEventListener('change', function (e) {
-        var fieldset = subscribeForm.elements["subscription"];
-        _this.subscription = fieldset.value;
-        _this.gameApp.clearAll();
-        _this.socket.renew(_this.subscription);
+        _this.setSubscription();
     });
 
     this.gameElts.form.addEventListener('submit', function (e) {
@@ -243,7 +277,7 @@ var _class = function () {
 
     _createClass(_class, [{
         key: "install",
-        value: function install() {
+        value: function install(postInstallAction) {
             var _this = this;
 
             if (!this.socketUrl) {
@@ -257,6 +291,9 @@ var _class = function () {
             };
             socket.onopen = function (e) {
                 _this.handleCliMsg("Socked opened successfully");
+                if (postInstallAction) {
+                    postInstallAction();
+                }
             };
             socket.onclose = function (e) {
                 _this.handleCliMsg("Closing socket");

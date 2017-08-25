@@ -13,6 +13,8 @@ scripts/set_js_domain.sh "<URL for websocket connections">
 npm run build
 ```
 
+*If you change any aspect of the javascript, you must rebuild with NPM and then rebuild the docker build and run images below*
+
 ## Building with Docker
 
 The build system uses two Docker images that must be built before building and running the main application. Both are based on [alpine linux](https://alpinelinux.org). The build image (also used for `stack exec`) adds GHC (which exists now in alpine edge) and some other things needed for stack. The runtime image merely adds Sqlite3 to create an empty initial sqlite3 database. The main executable is statically linked in the build image to ensure the runtime image can stay small.
@@ -23,7 +25,7 @@ make alpine-build # Approximately 1GB
 make alpine-run   # Approximately 10MB
 ```
 
-You can use stack like normal now. Be aware that `stack exec` runs slowly because of the time required to spin-up the large build image into a container. The executable will located inside the images at `/usr/local/bin/sally` and runs in the directory `/sally`, where the directory `static/` and database `sally.sqlite3` have been copied during the image creation. To create a docker image containing the executable within the runtime image above, run
+You can use stack like normal now. Be aware that `stack exec` may take a moment because of the time required to spin-up the large build image into a container. The executable will located inside the images at `/usr/local/bin/sally` and runs in the directory `/sally`, where the directory `static/` and database `sally.sqlite3` have been copied during the image creation. To create a docker image containing the executable within the runtime image above, run
 
 ```
 #Approximately 30MB

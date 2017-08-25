@@ -166,6 +166,13 @@ addClientTo :: Client -> MVar ServerState -> IO ()
 addClientTo cl mst = do
     modifyMVar_ mst $ \st -> do
         return $ addClient cl st
+    print "A client has entered. New state:"
+    debugState mst
+
+debugState :: MVar ServerState -> IO ()
+debugState mst = do
+    st <- readMVar mst
+    print st
         
 clientLeaves :: Client -> MVar ServerState -> IO ()
 clientLeaves cl mst = do
@@ -173,6 +180,8 @@ clientLeaves cl mst = do
         broadcast (not . toClient cl) byeMsg st
         broadcastNumClients st
         return $ rmClient cl st
+    print "A client is leaving. New state:"
+    debugState mst
   where
     byeMsg = 
         SvCtrl $ SvCtrlMsg $ "A client left: " <> toText (clUuid cl)

@@ -10,13 +10,13 @@ const cutValOfNode = function (el) {
 
 export default class SallyGame {
     constructor (socketUrl, gameUl, messageUl, gameElts, subscribeForm) {
-        this.gameApp = new MsgApp.App(gameUl, 8, MsgApp.order["AppendAtTop"]);
+        this.gameApp = new MsgApp.App(gameUl, 8, MsgApp.order["AppendAtTop"], this.updateGuessCount.bind(this));
 
         this.msgApp = new MsgApp.App(messageUl, 8, MsgApp.order["AppendAtBottom"]);
 
         this.socket = new SallySocket(socketUrl, this.handleServerMsg, this.handleClientMsg, this.handleGuess);
 
-        this.socket.install();
+        this.socket.install(this.setSubscription.bind(this));
 
         this.subscription = "SubSelf";
 
@@ -24,12 +24,7 @@ export default class SallyGame {
 
         this.gameElts = gameElts;
 
-        subscribeForm.addEventListener('change', e => {
-            var fieldset = subscribeForm.elements["subscription"]
-            this.subscription = fieldset.value;
-            this.gameApp.clearAll();
-            this.socket.renew(this.subscription);
-        });
+        subscribeForm.addEventListener('change', e => {this.setSubscription();} );
 
         this.gameElts.form.addEventListener('submit', e => {
             if (e.preventDefault) e.preventDefault();
@@ -56,10 +51,36 @@ export default class SallyGame {
         )
     }
 
+    setSubscription = () => {
+        var fieldset = this.subscribeForm.elements["subscription"]
+        this.subscription = fieldset.value;
+        this.gameApp.clearAll();
+        console.log("Attempting to renew with " + this.socket);
+        this.socket.renew(this.subscription);
+    }
+
+    updateGuessCount = () => {
+        if (this.subscription === "SubAll") {
+            var globalFlag = " (global)";
+        } else {
+                var globalFlag = "";
+        }
+        switch (this.gameApp.length) {
+            case 0:
+                this.gameElts.guessHeader.innerText = "No guesses yet" + globalFlag;
+                break;
+            case 1:
+                this.gameElts.guessHeader.innerText = "Last guess" + globalFlag;
+                break;
+            default:
+                this.gameElts.guessHeader.innerText = "Last " + this.gameApp.length + " guesses" + globalFlag;
+                break;
+        }
+    }
+
     handleGuess = (gsRes, isSelf) => {
         const nodes = mkGuessNodes(gsRes, isSelf);
         this.gameApp.pushNewLiWith(nodes);
-        this.gameElts.guessHeader.innerText = "Last " + this.gameApp.length + " guesses";
     }
 
 }
