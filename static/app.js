@@ -20,7 +20,7 @@ window.onload = function () {
     var gameUl = document.getElementById('game__list');
     var subField = document.getElementById('game__subform');
 
-    var game = new _sallygame2.default("ws:///:8080", gameUl, messageUl, gameElts, subField);
+    var game = new _sallygame2.default("ws://sally.dunnl.io", gameUl, messageUl, gameElts, subField);
 
     return true;
 };

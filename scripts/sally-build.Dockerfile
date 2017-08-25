@@ -4,5 +4,6 @@ RUN echo http://dl-cdn.alpinelinux.org/alpine/edge/testing >> /etc/apk/repositor
     && apk add wget ghc ca-certificates musl-dev shadow linux-headers zlib-dev \
     && update-ca-certificates
 RUN apk add sqlite
-ADD scripts/ scripts/
-RUN /usr/bin/sqlite3 sally.sqlite3 < scripts/initdb.sql
+ADD scripts/ /sally/scripts
+RUN /usr/bin/sqlite3 /sally/sally.sqlite3 < /sally/scripts/initdb.sql
+WORKDIR /sally

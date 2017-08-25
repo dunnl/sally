@@ -49,3 +49,7 @@ docker run dunnl/sally sally -p 8080 -d sally.sqlite
 
 There is no test suite for this project (!). It's an old project and not really
 worth building a test suite for now.
+
+## Docker caveats
+
+Stack automatically volume-mounts the current directory into the container

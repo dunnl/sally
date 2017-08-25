@@ -14,7 +14,7 @@ window.onload = function () {
     const gameUl = document.getElementById('game__list');
     const subField = document.getElementById('game__subform');
 
-    var game = new SallyGame("ws://sally.dunnl.io", gameUl, messageUl, gameElts, subField);
+    var game = new SallyGame("SALLY_URL", gameUl, messageUl, gameElts, subField);
 
     return true;
 }
