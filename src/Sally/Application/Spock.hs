@@ -11,6 +11,7 @@ module Sally.Application.Spock (
     makeSpockAppFrom
 ) where
 
+import Control.Concurrent.MVar
 import Control.Monad.IO.Class (liftIO)
 import Data.Text ()
 import Database.SQLite.Simple
@@ -24,7 +25,7 @@ import Sally.Game
 import Sally.Config
 import Sally.SpockUtil
 import Sally.Pages
-import Sally.Application.Websockets
+import Sally.Application.WebSockets
 
 {- We choose not to use Spock's database connection management because it would
  - have to share it the Websockets app. It is easier to manage it ourselves.
@@ -32,15 +33,15 @@ import Sally.Application.Websockets
 
 type NoSession = ()
 type NoDatabase = ()
-type SpockState = ServerState
+type MySpockState = MVar ServerState
 
 -- | Main export
-makeSpockAppFrom :: AppConfig -> SpockState -> IO Application
+makeSpockAppFrom :: AppConfig -> MySpockState -> IO Application
 makeSpockAppFrom conf state = do
-    spockCfg  <- defaultSpockCfg NoSession PCNoDatabase state
+    spockCfg  <- defaultSpockCfg () PCNoDatabase state
     spockAsApp $ spock spockCfg (spockAppWith conf)
 
-MySpockM = SpockM NoSession NoDatabase SpockState
+type MySpockM = SpockM NoDatabase NoSession MySpockState
 
 spockAppWith :: AppConfig -> MySpockM ()
 spockAppWith (AppConfig db _ _)= do

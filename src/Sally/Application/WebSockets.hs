@@ -10,9 +10,7 @@
 {-# language DeriveGeneric     #-}
 
 -- Docker test
-module Sally.Application.WebSockets (
-    addSocketsApp
-) where
+module Sally.Application.WebSockets where
 
 import Control.Monad (forever, when)
 import Control.Concurrent.MVar
@@ -85,7 +83,7 @@ rmClient :: Client -> ServerState -> ServerState
 rmClient = Map.delete . clUuid
 
 resetState :: ServerState -> ServerState
-resetState _ = const emptyState
+resetState = const emptyState
 
 subscribeClient :: Client -> Subscription -> MVar ServerState -> IO ()
 subscribeClient cl sub st =
@@ -240,6 +238,6 @@ handleClientMsg conf st client encmsg =
 
 -- | The main exported function, which accepts global application configuration
 -- data and wraps a WAI.Application with this websocket app
-wrapWithSockets :: AppConfig -> ServerState -> Application -> IO Application
+wrapWithSockets :: AppConfig -> MVar ServerState -> Application -> IO Application
 wrapWithSockets conf wsSt app = do
     return $ websocketsOr WC.defaultConnectionOptions (webSocketsApp conf wsSt) app
